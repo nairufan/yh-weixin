@@ -1,0 +1,6 @@
+.idea/
+yh-weixin.exe
+yh-weixin.exe~
+lastupdate.tmp*
+.idea/libraries/GOPATH__yh_share_.xml
+routers/commentsRouter_github_com_nairufan_yh-weixin_controllers.go
