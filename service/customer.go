@@ -3,7 +3,7 @@ package service
 import (
 	"github.com/nairufan/yh-weixin/models"
 	"github.com/nairufan/yh-weixin/db/mongo"
-	"github.com/UnityTech/connect/server/apperror"
+	"github.com/nairufan/yh-weixin/apperror"
 	"gopkg.in/mgo.v2/bson"
 )
 
