@@ -30,7 +30,6 @@ func (u *UserController) WxExchangeCode() {
 	appId := beego.AppConfig.String("wx.appid")
 	secret := beego.AppConfig.String("wx.secret")
 	url = fmt.Sprintf(url, appId, secret, code)
-	beego.Info(url)
 	resp, err := http.Get(url)
 	if err != nil {
 		panic(err)
