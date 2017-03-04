@@ -3,7 +3,7 @@ package controllers
 import (
 	"github.com/nairufan/yh-weixin/models"
 	"github.com/nairufan/yh-weixin/service"
-	"github.com/chengyeinfo/answers/server/apperror"
+	"github.com/nairufan/yh-weixin/apperror"
 	"strconv"
 )
 
