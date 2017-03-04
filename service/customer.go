@@ -34,6 +34,7 @@ func UpdateCustomer(customer *models.Customer) *models.Customer {
 	c.Tel = customer.Tel
 	c.Name = customer.Name
 	c.Address = customer.Address
+	c.Note = customer.Note
 
 	session := mongo.Get()
 	defer session.Close()
@@ -70,5 +71,25 @@ func GetCustomers(userId string, offset int, limit int) []*models.Customer {
 		Offset: &offset,
 	}
 	session.MustFindWithOptions(collectionCustomer, bson.M{"userId": userId}, option, &customers)
+	return customers
+}
+
+func GetCustomerByTel(tel string) *models.Customer {
+	session := mongo.Get()
+	defer session.Close()
+	customers := []*models.Customer{}
+	session.MustFind(collectionCustomer, bson.M{"tel": tel}, &customers)
+	if len(customers) > 0 {
+		return customers[0]
+	}
+	return nil
+}
+
+func GetCustomerByIds(ids []string) []*models.Customer {
+	session := mongo.Get()
+	defer session.Close()
+	customers := []*models.Customer{}
+
+	session.MustFind(collectionCustomer, bson.M{"_id": bson.M{"$in": ids}}, &customers)
 	return customers
 }

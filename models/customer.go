@@ -6,4 +6,5 @@ type Customer struct {
 	Name    string         `bson:"name"  json:"name"`
 	Tel     string         `bson:"tel"  json:"tel"`
 	Address string         `bson:"address"  json:"address"`
+	Note    string         `bson:"note"  json:"note"`
 }

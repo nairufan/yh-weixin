@@ -12,9 +12,10 @@ type CustomerController struct {
 
 type customerRequest struct {
 	Id      string     `json:"id"`
-	Name    string     `json:"name"`
-	Tel     string     `json:"tel"`
-	Address string     `json:"address"`
+	Name    string     `json:"name" validate:"required"`
+	Tel     string     `json:"tel" validate:"required"`
+	Address string     `json:"address" validate:"required"`
+	Note    string     `json:"note" validate:"required"`
 }
 
 // @router /merge [post]
@@ -29,15 +30,10 @@ func (c *CustomerController) MergeCustomer() {
 		UserId: c.GetUserId(),
 	}
 
-	if request.Name != "" {
-		customer.Name = request.Name
-	}
-	if request.Tel != "" {
-		customer.Tel = request.Tel
-	}
-	if request.Address != "" {
-		customer.Address = request.Address
-	}
+	customer.Name = request.Name
+	customer.Tel = request.Tel
+	customer.Address = request.Address
+	customer.Note = request.Note
 
 	if request.Id == "" {
 		customer = service.AddCustomer(customer)

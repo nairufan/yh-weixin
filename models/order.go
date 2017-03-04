@@ -7,12 +7,18 @@ type Order struct {
 	Status     string         `bson:"status"  json:"status"`
 	Express    string         `bson:"express"  json:"express"`
 	Note       string         `bson:"note"  json:"note"`
+	TotalPrice int            `bson:"totalPrice"  json:"totalPrice"`
 }
 
 type OrderItem struct {
-	MetaFields                   `bson:",inline"`
-	OrderId    string            `bson:"orderId"  json:"orderId"`
-	GoodsId    string            `bson:"goodsId"  json:"goodsId"`
-	Quantity   int               `bson:"quantity"  json:"quantity"`
-	TotalPrice int               `bson:"totalPrice"  json:"totalPrice"`
+	MetaFields                 `bson:",inline"`
+	OrderId  string            `bson:"orderId"  json:"orderId"`
+	GoodsId  string            `bson:"goodsId"  json:"goodsId"`
+	Quantity int               `bson:"quantity"  json:"quantity"`
 }
+
+const (
+	OrderStatusPending = "pending"
+	OrderStatusDone = "done"
+	OrderStatusClose = "close"
+)

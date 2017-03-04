@@ -73,3 +73,12 @@ func GetGoods(userId string, offset int, limit int) []*models.Goods {
 	session.MustFindWithOptions(collectionGoods, bson.M{"userId": userId}, option, &goods)
 	return goods
 }
+
+func GetGoodsByIds(ids []string) []*models.Goods {
+	session := mongo.Get()
+	defer session.Close()
+	goods := []*models.Goods{}
+
+	session.MustFind(collectionGoods, bson.M{"_id": bson.M{"$in": ids}}, &goods)
+	return goods
+}
