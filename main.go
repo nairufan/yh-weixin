@@ -18,5 +18,6 @@ func main() {
 	beego.InsertFilter("/api/customer/*", beego.BeforeRouter, filters.LoginCheck)
 	beego.InsertFilter("/api/goods/*", beego.BeforeRouter, filters.LoginCheck)
 	beego.InsertFilter("/api/order/*", beego.BeforeRouter, filters.LoginCheck)
+	beego.InsertFilter("/api/user/buy-history", beego.BeforeRouter, filters.LoginCheck)
 	beego.Run()
 }

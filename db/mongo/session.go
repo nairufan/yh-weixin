@@ -19,7 +19,7 @@ type Option struct {
 }
 
 func (o Option) SafeLimit() *int {
-	l := 100
+	l := 10000
 	if *o.Limit <= 0 {
 		return &l
 	}
