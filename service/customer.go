@@ -14,10 +14,10 @@ const (
 func AddCustomer(customer *models.Customer) *models.Customer {
 	customer.MetaFields = models.NewMetaFields()
 	if customer.Tel == "" {
-		apperror.NewInvalidParameterError("tel")
+		panic(apperror.NewInvalidParameterError("tel"))
 	}
 	if customer.UserId == "" {
-		apperror.NewInvalidParameterError("userId")
+		panic(apperror.NewInvalidParameterError("userId"))
 	}
 	session := mongo.Get()
 	defer session.Close()
@@ -28,7 +28,7 @@ func AddCustomer(customer *models.Customer) *models.Customer {
 
 func UpdateCustomer(customer *models.Customer) *models.Customer {
 	if customer.Id == "" {
-		apperror.NewInvalidParameterError("id")
+		panic(apperror.NewInvalidParameterError("id"))
 	}
 	c := GetCustomerById(customer.Id)
 	c.Tel = customer.Tel
@@ -52,7 +52,7 @@ func GetCustomerById(id string) *models.Customer {
 
 func RemoveCustomerById(id string) {
 	if id == "" {
-		apperror.NewInvalidParameterError("id")
+		panic(apperror.NewInvalidParameterError("id"))
 	}
 
 	session := mongo.Get()

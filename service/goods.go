@@ -14,10 +14,10 @@ const (
 func AddGoods(goods *models.Goods) *models.Goods {
 	goods.MetaFields = models.NewMetaFields()
 	if goods.Name == "" {
-		apperror.NewInvalidParameterError("name")
+		panic(apperror.NewInvalidParameterError("name"))
 	}
 	if goods.UserId == "" {
-		apperror.NewInvalidParameterError("userId")
+		panic(apperror.NewInvalidParameterError("userId"))
 	}
 	session := mongo.Get()
 	defer session.Close()
@@ -28,10 +28,10 @@ func AddGoods(goods *models.Goods) *models.Goods {
 
 func UpdateGoods(goods *models.Goods) *models.Goods {
 	if goods.Id == "" {
-		apperror.NewInvalidParameterError("id")
+		panic(apperror.NewInvalidParameterError("id"))
 	}
 	if goods.Name == "" {
-		apperror.NewInvalidParameterError("name")
+		panic(apperror.NewInvalidParameterError("name"))
 	}
 	g := GetGoodsById(goods.Id)
 	g.Name = goods.Name
@@ -52,7 +52,7 @@ func GetGoodsById(id string) *models.Goods {
 
 func RemoveGoodsById(id string) {
 	if id == "" {
-		apperror.NewInvalidParameterError("id")
+		panic(apperror.NewInvalidParameterError("id"))
 	}
 
 	session := mongo.Get()

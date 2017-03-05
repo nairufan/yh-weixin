@@ -4,6 +4,7 @@ type Order struct {
 	MetaFields                `bson:",inline"`
 	UserId     string         `bson:"userId"  json:"userId"`
 	CustomerId string         `bson:"customerId"  json:"customerId"`
+	Tel        string         `bson:"tel"  json:"tel"`
 	Status     string         `bson:"status"  json:"status"`
 	Express    string         `bson:"express"  json:"express"`
 	Note       string         `bson:"note"  json:"note"`

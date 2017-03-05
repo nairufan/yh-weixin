@@ -6,6 +6,9 @@ import (
 	"io/ioutil"
 	"fmt"
 	"net/http"
+	"strconv"
+	"time"
+	"github.com/nairufan/yh-weixin/service"
 )
 
 type UserController struct {
@@ -62,6 +65,67 @@ func (u *UserController) MockLogin() {
 	response := &loginResponse{
 		SessionId: u.CruSession.SessionID(),
 	}
+	u.Data["json"] = response
+	u.ServeJSON()
+}
+
+type goodsType struct {
+	Id       string                 `json:"id"`
+	Name     string                 `json:"name"`
+	Quantity int                    `json:"quantity"`
+}
+
+type buyHistory struct {
+	OrderId     string                 `json:"orderId"`
+	GoodsList   []*goodsType           `json:"goodsList"`
+	CreatedTime *time.Time             `json:"createdTime"`
+}
+
+// @router /buy-history [get]
+func (u *UserController) BuyHistory() {
+	tel := u.GetString("tel")
+	offset := u.GetString("offset")
+	limit := u.GetString("limit")
+	offsetInt, _ := strconv.Atoi(offset)
+	limitInt, _ := strconv.Atoi(limit)
+	response := []*buyHistory{}
+
+	orders := service.GetOrderByTel(tel, offsetInt, limitInt)
+	if len(orders) > 0 {
+		orderIds := []string{}
+		for _, order := range orders {
+			orderIds = append(orderIds, order.Id)
+			response = append(response, &buyHistory{
+				OrderId: order.Id,
+				CreatedTime: order.CreatedTime,
+			})
+		}
+		orderGoodsMap := map[string][]*goodsType{}
+		orderItems := service.GetOrderItems(orderIds)
+		goodsIds := []string{}
+		for _, orderItem := range orderItems {
+			goodsIds = append(goodsIds, orderItem.GoodsId)
+			goodsL := orderGoodsMap[orderItem.OrderId]
+			if goodsL == nil {
+				goodsL = []*goodsType{}
+			}
+			goodsL = append(goodsL, &goodsType{
+				Id: orderItem.GoodsId,
+				Quantity: orderItem.Quantity,
+			})
+			orderGoodsMap[orderItem.OrderId] = goodsL
+		}
+		goodsList := service.GetGoodsByIds(goodsIds)
+		goodsMap := ConvertGoodsMap(goodsList)
+
+		for _, g := range response {
+			g.GoodsList = orderGoodsMap[g.OrderId]
+			for _, goods := range g.GoodsList {
+				goods.Name = goodsMap[goods.Id].Name
+			}
+		}
+	}
+
 	u.Data["json"] = response
 	u.ServeJSON()
 }

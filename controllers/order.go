@@ -35,6 +35,7 @@ func (o *OrderController) CreateOrder() {
 	order := &models.Order{
 		UserId: o.GetUserId(),
 		CustomerId: customer.Id,
+		Tel: customer.Tel,
 		TotalPrice: request.TotalPrice,
 		Note: request.Note,
 	}

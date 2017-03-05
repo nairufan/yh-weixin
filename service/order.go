@@ -15,11 +15,14 @@ const (
 func AddOrder(order *models.Order) *models.Order {
 	order.MetaFields = models.NewMetaFields()
 	order.Status = models.OrderStatusPending
-	if order.CustomerId == "" {
-		apperror.NewInvalidParameterError("customerId")
-	}
 	if order.UserId == "" {
-		apperror.NewInvalidParameterError("userId")
+		panic(apperror.NewInvalidParameterError("userId"))
+	}
+	if order.CustomerId == "" {
+		panic(apperror.NewInvalidParameterError("customerId"))
+	}
+	if order.Tel == "" {
+		panic(apperror.NewInvalidParameterError("tel"))
 	}
 	session := mongo.Get()
 	defer session.Close()
@@ -30,7 +33,7 @@ func AddOrder(order *models.Order) *models.Order {
 
 func UpdateOrder(order *models.Order) *models.Order {
 	if order.Id == "" {
-		apperror.NewInvalidParameterError("id")
+		panic(apperror.NewInvalidParameterError("id"))
 	}
 	checkOrderStatus(order.Status)
 	o := GetOrderById(order.Id)
@@ -55,13 +58,13 @@ func AddOrderItem(orderItem *models.OrderItem) *models.OrderItem {
 	orderItem.MetaFields = models.NewMetaFields()
 
 	if orderItem.OrderId == "" {
-		apperror.NewInvalidParameterError("orderId")
+		panic(apperror.NewInvalidParameterError("orderId"))
 	}
 	if orderItem.GoodsId == "" {
-		apperror.NewInvalidParameterError("goodsId")
+		panic(apperror.NewInvalidParameterError("goodsId"))
 	}
 	if orderItem.Quantity <= 0 {
-		apperror.NewInvalidParameterError("quantity")
+		panic(apperror.NewInvalidParameterError("quantity"))
 	}
 	session := mongo.Get()
 	defer session.Close()
@@ -91,6 +94,22 @@ func GetOrderItems(ids []string) []*models.OrderItem {
 
 	session.MustFind(collectionOrderItem, bson.M{"orderId": bson.M{"$in": ids}}, &orderItems)
 	return orderItems
+}
+
+func GetOrderByTel(tel string, offset int, limit int) []*models.Order {
+	if tel == "" {
+		panic(apperror.NewInvalidParameterError("tel"))
+	}
+	session := mongo.Get()
+	defer session.Close()
+	orders := []*models.Order{}
+	option := mongo.Option{
+		Sort: []string{"-createdTime"},
+		Limit: &limit,
+		Offset: &offset,
+	}
+	session.MustFindWithOptions(collectionOrder, bson.M{"tel": tel}, option, &orders)
+	return orders
 }
 
 func checkOrderStatus(status string) {
