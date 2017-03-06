@@ -14,8 +14,8 @@ type customerRequest struct {
 	Id      string     `json:"id"`
 	Name    string     `json:"name" validate:"required"`
 	Tel     string     `json:"tel" validate:"required"`
-	Address string     `json:"address" validate:"required"`
-	Note    string     `json:"note" validate:"required"`
+	Address string     `json:"address"`
+	Note    string     `json:"note"`
 }
 
 // @router /merge [post]
