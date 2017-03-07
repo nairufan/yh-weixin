@@ -61,7 +61,11 @@ func (u *UserController) WxExchangeCode() {
 
 // @router /mock-login [get]
 func (u *UserController) MockLogin() {
-	u.SetUserId("1111")
+	id := u.GetString("id")
+	if id == "" {
+		id = "111"
+	}
+	u.SetUserId(id)
 	response := &loginResponse{
 		SessionId: u.CruSession.SessionID(),
 	}
