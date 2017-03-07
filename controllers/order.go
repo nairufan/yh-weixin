@@ -54,8 +54,9 @@ func (o *OrderController) CreateOrder() {
 
 type updateOrderRequest struct {
 	Id      string           `json:"id" validate:"required"`
-	Status  string           `json:"status" validate:"required"`
-	Express string           `json:"express" validate:"required"`
+	Status  string           `json:"status"`
+	Express string           `json:"express"`
+	Note    string           `json:"note"`
 }
 
 // @router /update [post]
@@ -66,7 +67,7 @@ func (o *OrderController) UpdateOrder() {
 	order := &models.Order{
 		Status: request.Status,
 		Express: request.Express,
-
+		Note: request.Note,
 	}
 	order.Id = request.Id
 	order = service.UpdateOrder(order)

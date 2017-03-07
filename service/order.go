@@ -39,6 +39,7 @@ func UpdateOrder(order *models.Order) *models.Order {
 	o := GetOrderById(order.Id)
 	o.Express = order.Express
 	o.Status = order.Status
+	o.Note = order.Note
 
 	session := mongo.Get()
 	defer session.Close()
