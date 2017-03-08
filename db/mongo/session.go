@@ -142,3 +142,9 @@ func (s *Session) RemoveId(collection string, id interface{}) {
 		panic(err)
 	}
 }
+
+func (s *Session) RemoveAll(collection string, selector interface{}) {
+	if _, err := s.C(collection).RemoveAll(selector); err != nil {
+		panic(err)
+	}
+}

@@ -87,7 +87,33 @@ func (o *OrderController) UpdateOrder() {
 			service.AddCustomer(customer)
 		}
 	}
+	if filed == "Express" {
+		order = updateOrderField(request.Id, "Status", models.OrderStatusDone)
+	}
 	o.Data["json"] = order
+	o.ServeJSON()
+}
+
+type updateOrderItemsRequest struct {
+	Id        string           `json:"orderId" validate:"required"`
+	GoodsList []*orderGoods    `json:"goodsList" validate:"required"`
+}
+
+// @router /update-items [post]
+func (o *OrderController) UpdateOrderItems() {
+	var request updateOrderItemsRequest
+	o.Bind(&request)
+
+	service.RemoveAllOrderItems(request.Id)
+	for _, goods := range request.GoodsList {
+		orderItem := &models.OrderItem{
+			OrderId: request.Id,
+			GoodsId: goods.GoodsId,
+			Quantity: goods.Quantity,
+		}
+		orderItem = service.AddOrderItem(orderItem)
+	}
+	o.Data["json"] = map[string]bool{"success": true}
 	o.ServeJSON()
 }
 

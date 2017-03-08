@@ -91,6 +91,16 @@ func RemoveOrderItemById(id string) {
 	session.RemoveId(collectionOrderItem, id)
 }
 
+func RemoveAllOrderItems(id string) {
+	if id == "" {
+		panic(apperror.NewInvalidParameterError("id"))
+	}
+
+	session := mongo.Get()
+	defer session.Close()
+	session.RemoveAll(collectionOrderItem, bson.M{"orderId": id})
+}
+
 func UpdateOrderItem(orderItem *models.OrderItem) *models.OrderItem {
 	if orderItem.Id == "" {
 		panic(apperror.NewInvalidParameterError("id"))
@@ -116,7 +126,11 @@ func GetOrders(userId string, offset int, limit int) []*models.Order {
 		Limit: &limit,
 		Offset: &offset,
 	}
-	session.MustFindWithOptions(collectionOrder, bson.M{"userId": userId}, option, &orders)
+	query := bson.M{}
+	query["userId"] = userId
+	query["status"] = bson.M{"$ne": models.OrderStatusClose}
+
+	session.MustFindWithOptions(collectionOrder, query, option, &orders)
 	return orders
 }
 
@@ -141,7 +155,12 @@ func GetOrderByTel(userId string, tel string, offset int, limit int) []*models.O
 		Limit: &limit,
 		Offset: &offset,
 	}
-	session.MustFindWithOptions(collectionOrder, bson.M{"userId": userId, "tel": tel}, option, &orders)
+	query := bson.M{}
+	query["userId"] = userId
+	query["tel"] = tel
+	query["status"] = bson.M{"$ne": models.OrderStatusClose}
+
+	session.MustFindWithOptions(collectionOrder, query, option, &orders)
 	return orders
 }
 
