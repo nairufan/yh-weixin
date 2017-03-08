@@ -74,11 +74,11 @@ func GetCustomers(userId string, offset int, limit int) []*models.Customer {
 	return customers
 }
 
-func GetCustomerByTel(tel string) *models.Customer {
+func GetCustomerByTel(userId string, tel string) *models.Customer {
 	session := mongo.Get()
 	defer session.Close()
 	customers := []*models.Customer{}
-	session.MustFind(collectionCustomer, bson.M{"tel": tel}, &customers)
+	session.MustFind(collectionCustomer, bson.M{"userId": userId, "tel": tel}, &customers)
 	if len(customers) > 0 {
 		return customers[0]
 	}

@@ -18,11 +18,14 @@ func AddOrder(order *models.Order) *models.Order {
 	if order.UserId == "" {
 		panic(apperror.NewInvalidParameterError("userId"))
 	}
-	if order.CustomerId == "" {
-		panic(apperror.NewInvalidParameterError("customerId"))
+	if order.Name == "" {
+		panic(apperror.NewInvalidParameterError("name"))
 	}
 	if order.Tel == "" {
 		panic(apperror.NewInvalidParameterError("tel"))
+	}
+	if order.Address == "" {
+		panic(apperror.NewInvalidParameterError("address"))
 	}
 	session := mongo.Get()
 	defer session.Close()
@@ -36,15 +39,11 @@ func UpdateOrder(order *models.Order) *models.Order {
 		panic(apperror.NewInvalidParameterError("id"))
 	}
 	checkOrderStatus(order.Status)
-	o := GetOrderById(order.Id)
-	o.Express = order.Express
-	o.Status = order.Status
-	o.Note = order.Note
 
 	session := mongo.Get()
 	defer session.Close()
-	session.MustUpdateId(collectionOrder, o.Id, o)
-	return o
+	session.MustUpdateId(collectionOrder, order.Id, order)
+	return order
 }
 
 func GetOrderById(id string) *models.Order {
@@ -74,6 +73,39 @@ func AddOrderItem(orderItem *models.OrderItem) *models.OrderItem {
 	return orderItem
 }
 
+func GetOrderItemById(id string) *models.OrderItem {
+	session := mongo.Get()
+	defer session.Close()
+	orderItem := &models.OrderItem{}
+	session.MustFindId(collectionOrderItem, id, orderItem)
+	return orderItem
+}
+
+func RemoveOrderItemById(id string) {
+	if id == "" {
+		panic(apperror.NewInvalidParameterError("id"))
+	}
+
+	session := mongo.Get()
+	defer session.Close()
+	session.RemoveId(collectionOrderItem, id)
+}
+
+func UpdateOrderItem(orderItem *models.OrderItem) *models.OrderItem {
+	if orderItem.Id == "" {
+		panic(apperror.NewInvalidParameterError("id"))
+	}
+	item := GetOrderItemById(orderItem.Id)
+	if item == nil {
+		panic(apperror.NewInvalidParameterError("id"))
+	}
+	item.Quantity = orderItem.Quantity
+	session := mongo.Get()
+	defer session.Close()
+	session.MustUpdateId(collectionOrderItem, item.Id, item)
+	return item
+}
+
 func GetOrders(userId string, offset int, limit int) []*models.Order {
 	session := mongo.Get()
 	defer session.Close()
@@ -97,7 +129,7 @@ func GetOrderItems(ids []string) []*models.OrderItem {
 	return orderItems
 }
 
-func GetOrderByTel(tel string, offset int, limit int) []*models.Order {
+func GetOrderByTel(userId string, tel string, offset int, limit int) []*models.Order {
 	if tel == "" {
 		panic(apperror.NewInvalidParameterError("tel"))
 	}
@@ -109,7 +141,7 @@ func GetOrderByTel(tel string, offset int, limit int) []*models.Order {
 		Limit: &limit,
 		Offset: &offset,
 	}
-	session.MustFindWithOptions(collectionOrder, bson.M{"tel": tel}, option, &orders)
+	session.MustFindWithOptions(collectionOrder, bson.M{"userId": userId, "tel": tel}, option, &orders)
 	return orders
 }
 

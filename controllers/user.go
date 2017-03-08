@@ -94,7 +94,7 @@ func (u *UserController) BuyHistory() {
 	limitInt, _ := strconv.Atoi(limit)
 	response := []*buyHistory{}
 
-	orders := service.GetOrderByTel(tel, offsetInt, limitInt)
+	orders := service.GetOrderByTel(u.GetUserId(), tel, offsetInt, limitInt)
 	if len(orders) > 0 {
 		orderIds := []string{}
 		for _, order := range orders {

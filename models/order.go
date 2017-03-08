@@ -3,8 +3,9 @@ package models
 type Order struct {
 	MetaFields                `bson:",inline"`
 	UserId     string         `bson:"userId"  json:"userId"`
-	CustomerId string         `bson:"customerId"  json:"customerId"`
+	Name       string         `bson:"name"  json:"name"`
 	Tel        string         `bson:"tel"  json:"tel"`
+	Address    string         `bson:"address"  json:"address"`
 	Status     string         `bson:"status"  json:"status"`
 	Express    string         `bson:"express"  json:"express"`
 	Note       string         `bson:"note"  json:"note"`

@@ -5,7 +5,10 @@ import (
 	"github.com/nairufan/yh-weixin/service"
 	"github.com/nairufan/yh-weixin/apperror"
 	"strconv"
+	"reflect"
 )
+
+var changeOrderFiledMap map[string]string
 
 type OrderController struct {
 	BaseController
@@ -17,10 +20,9 @@ type orderGoods struct {
 }
 
 type createOrderRequest struct {
-	CustomerId      string           `json:"customerId"`
-	CustomerName    string           `json:"customerName"`
-	CustomerTel     string           `json:"customerTel"`
-	CustomerAddress string           `json:"customerAddress"`
+	CustomerName    string           `json:"customerName" validate:"required"`
+	CustomerTel     string           `json:"customerTel" validate:"required"`
+	CustomerAddress string           `json:"customerAddress" validate:"required"`
 	GoodsList       []*orderGoods    `json:"goodsList" validate:"required"`
 	TotalPrice      int              `json:"totalPrice"`
 	Note            string           `json:"note"`
@@ -31,11 +33,12 @@ func (o *OrderController) CreateOrder() {
 	var request createOrderRequest
 	o.Bind(&request)
 
-	customer := mergeCustomer(request.CustomerId, request.CustomerName, request.CustomerTel, request.CustomerAddress, o.GetUserId())
+	customer := mergeCustomer(request.CustomerName, request.CustomerTel, request.CustomerAddress, o.GetUserId())
 	order := &models.Order{
 		UserId: o.GetUserId(),
-		CustomerId: customer.Id,
+		Name: customer.Name,
 		Tel: customer.Tel,
+		Address: customer.Address,
 		TotalPrice: request.TotalPrice,
 		Note: request.Note,
 	}
@@ -53,32 +56,98 @@ func (o *OrderController) CreateOrder() {
 }
 
 type updateOrderRequest struct {
-	Id      string           `json:"id" validate:"required"`
-	Status  string           `json:"status"`
-	Express string           `json:"express"`
-	Note    string           `json:"note"`
+	Id    string           `json:"id" validate:"required"`
+	Field string           `json:"field" validate:"required"`
+	Value string           `json:"value" validate:"required"`
 }
 
 // @router /update [post]
 func (o *OrderController) UpdateOrder() {
 	var request updateOrderRequest
 	o.Bind(&request)
-
-	order := &models.Order{
-		Status: request.Status,
-		Express: request.Express,
-		Note: request.Note,
+	filed := changeOrderFiledMap[request.Field]
+	if filed == "" {
+		panic(apperror.NewInvalidParameterError("valid field: name, tel, address, status, express, note, totalPrice"))
 	}
-	order.Id = request.Id
-	order = service.UpdateOrder(order)
+	var value interface{}
+	value = request.Value
+	if filed == "TotalPrice" {
+		value, _ = strconv.Atoi(request.Value)
+	}
+	order := updateOrderField(request.Id, filed, value)
+	if filed == "Tel" {
+		c := service.GetCustomerByTel(o.GetUserId(), request.Value)
+		if c == nil {
+			customer := &models.Customer{
+				Name: order.Name,
+				Tel: order.Tel,
+				Address: order.Address,
+				UserId: o.GetUserId(),
+			}
+			service.AddCustomer(customer)
+		}
+	}
 	o.Data["json"] = order
 	o.ServeJSON()
+}
+
+type deleteOrderItemRequest struct {
+	Id string           `json:"id" validate:"required"`
+}
+
+// @router /remove-item [post]
+func (o *OrderController) DeleteOrderItem() {
+	var request deleteOrderItemRequest
+	o.Bind(&request)
+
+	service.RemoveOrderItemById(request.Id)
+	o.Data["json"] = map[string]bool{"success": true}
+	o.ServeJSON()
+}
+
+type updateOrderItemRequest struct {
+	Id       string     `json:"id" `
+	OrderId  string     `json:"orderId"`
+	GoodsId  string     `json:"goodsId"`
+	Quantity int        `json:"quantity" validate:"required"`
+}
+
+// @router /merge-item [post]
+func (o *OrderController) UpdateOrderItem() {
+	var request updateOrderItemRequest
+	o.Bind(&request)
+
+	item := &models.OrderItem{
+		Quantity: request.Quantity,
+	}
+	if request.Id == "" {
+		item.OrderId = request.OrderId
+		item.GoodsId = request.GoodsId
+		service.AddOrderItem(item)
+	} else {
+		item.Id = request.Id
+		item = service.UpdateOrderItem(item)
+	}
+
+	o.Data["json"] = item
+	o.ServeJSON()
+}
+
+func updateOrderField(id string, filedName string, fieldValue interface{}) *models.Order {
+	order := service.GetOrderById(id)
+	ps := reflect.ValueOf(order)
+	val := ps.Elem()
+	field := val.FieldByName(filedName)
+	if field.IsValid() && field.CanSet() {
+		field.Set(reflect.ValueOf(fieldValue))
+	}
+	newOrder := service.UpdateOrder(order)
+	return newOrder
 }
 
 type orderListResponse struct {
 	OrderList    []*models.Order                          `json:"orderList"`
 	OrderItemMap map[string][]*models.OrderItem           `json:"orderItemMap"`
-	CustomerMap  map[string]*models.Customer                   `json:"customerMap"`
 	GoodsMap     map[string]*models.Goods                 `json:"goodsMap"`
 }
 
@@ -93,30 +162,20 @@ func (o *OrderController) GetOrders() {
 	orders := service.GetOrders(o.GetUserId(), offsetInt, limitInt)
 	response.OrderList = orders
 	orderIds := []string{}
-	customerIds := []string{}
+
 	for _, order := range orders {
 		orderIds = append(orderIds, order.Id)
-		customerIds = append(customerIds, order.CustomerId)
 	}
 	orderItems := service.GetOrderItems(orderIds)
-	customers := service.GetCustomerByIds(customerIds)
 	orderItemMap, goodsIds := ConvertOrderItemMap(orderItems)
 	goodsList := service.GetGoodsByIds(goodsIds)
 	response.OrderItemMap = orderItemMap
-	response.CustomerMap = ConvertCustomerMap(customers)
 	response.GoodsMap = ConvertGoodsMap(goodsList)
 	o.Data["json"] = response
 	o.ServeJSON()
 }
 
-func mergeCustomer(customerId string, customerName string, customerTel string, customerAddress string, userId string) *models.Customer {
-	if customerId != "" {
-		c := service.GetCustomerById(customerId)
-		if c == nil {
-			panic(apperror.NewInvalidParameterError("customerId"))
-		}
-		return c
-	}
+func mergeCustomer(customerName string, customerTel string, customerAddress string, userId string) *models.Customer {
 	if customerName == "" {
 		panic(apperror.NewParameterRequiredError("customerName"))
 	}
@@ -126,7 +185,7 @@ func mergeCustomer(customerId string, customerName string, customerTel string, c
 	if customerAddress == "" {
 		panic(apperror.NewParameterRequiredError("customerAddress"))
 	}
-	customer := service.GetCustomerByTel(customerTel)
+	customer := service.GetCustomerByTel(userId, customerTel)
 	if customer != nil {
 		customer.Name = customerName
 		customer.Tel = customerTel
@@ -160,15 +219,6 @@ func ConvertOrderItemMap(orderItems []*models.OrderItem) (map[string][]*models.O
 	return orderItemMap, goodsIds
 }
 
-func ConvertCustomerMap(customers []*models.Customer) map[string]*models.Customer {
-	customerMap := map[string]*models.Customer{}
-	for _, customer := range customers {
-		customerMap[customer.Id] = customer
-	}
-
-	return customerMap
-}
-
 func ConvertGoodsMap(goodsList []*models.Goods) map[string]*models.Goods {
 	goodsMap := map[string]*models.Goods{}
 	for _, goods := range goodsList {
@@ -176,4 +226,16 @@ func ConvertGoodsMap(goodsList []*models.Goods) map[string]*models.Goods {
 	}
 
 	return goodsMap
+}
+
+func init() {
+	changeOrderFiledMap = map[string]string{
+		"name": "Name",
+		"tel": "Tel",
+		"address": "Address",
+		"status": "Status",
+		"express": "Express",
+		"note": "Note",
+		"totalPrice": "TotalPrice",
+	}
 }
