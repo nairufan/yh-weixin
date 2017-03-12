@@ -157,7 +157,7 @@ func initUserDefaultData(userId string) {
 		UserId: userId,
 	}
 	customerC := &models.Customer{
-		Name: "鹿晗",
+		Name: "吴亦凡",
 		Tel: "11223366",
 		Address: "中国北京",
 		UserId: userId,
@@ -180,13 +180,15 @@ func initUserDefaultData(userId string) {
 	goodsA = service.AddGoods(goodsA)
 	goodsB = service.AddGoods(goodsB)
 
-	goodsList := []*models.Goods{
+	orderA := initAddOrder(userId, customerA, []*models.Goods{
 		goodsA, goodsB,
-	}
-
-	orderA := initAddOrder(userId, customerA, goodsList)
-	initAddOrder(userId, customerB, goodsList)
-	orderC := initAddOrder(userId, customerC, goodsList)
+	}, 3)
+	initAddOrder(userId, customerB, []*models.Goods{
+		goodsB,
+	}, 1)
+	orderC := initAddOrder(userId, customerC, []*models.Goods{
+		goodsA,
+	}, 6)
 
 	orderA.Status = models.OrderStatusDone
 	orderC.Status = models.OrderStatusDone
@@ -194,7 +196,7 @@ func initUserDefaultData(userId string) {
 	service.UpdateOrder(orderC)
 }
 
-func initAddOrder(userId string, customer *models.Customer, goods []*models.Goods) *models.Order {
+func initAddOrder(userId string, customer *models.Customer, goods []*models.Goods, quantity int) *models.Order {
 	order := &models.Order{
 		UserId: userId,
 		Name: customer.Name,
@@ -208,7 +210,7 @@ func initAddOrder(userId string, customer *models.Customer, goods []*models.Good
 		orderItem := &models.OrderItem{
 			OrderId: order.Id,
 			GoodsId: goods.Id,
-			Quantity: 2,
+			Quantity: quantity,
 		}
 		orderItem = service.AddOrderItem(orderItem)
 	}
