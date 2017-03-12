@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"time"
 	"github.com/nairufan/yh-weixin/service"
+	"github.com/nairufan/yh-weixin/models"
 )
 
 type UserController struct {
@@ -50,7 +51,14 @@ func (u *UserController) WxExchangeCode() {
 		beego.Error(exResponse.ErrMsg)
 		panic(exResponse.ErrMsg)
 	}
-	u.SetUserId(exResponse.Openid)
+	user := service.GetUserByOpenId(exResponse.Openid)
+	if user == nil {
+		user = service.AddUser(&models.User{
+			OpenId: exResponse.Openid,
+		})
+		initUserDefaultData(user.Id)
+	}
+	u.SetUserId(user.Id)
 
 	response := &loginResponse{
 		SessionId: u.CruSession.SessionID(),
@@ -132,4 +140,78 @@ func (u *UserController) BuyHistory() {
 
 	u.Data["json"] = response
 	u.ServeJSON()
+}
+
+func initUserDefaultData(userId string) {
+
+	customerA := &models.Customer{
+		Name: "范冰冰",
+		Tel: "11223344",
+		Address: "中国山东",
+		UserId: userId,
+	}
+	customerB := &models.Customer{
+		Name: "李易峰",
+		Tel: "11223355",
+		Address: "中国四川",
+		UserId: userId,
+	}
+	customerC := &models.Customer{
+		Name: "鹿晗",
+		Tel: "11223366",
+		Address: "中国北京",
+		UserId: userId,
+	}
+
+	customerA = service.AddCustomer(customerA)
+	customerB = service.AddCustomer(customerB)
+	customerC = service.AddCustomer(customerC)
+
+	goodsA := &models.Goods{
+		Name: "测试商品A",
+		UserId: userId,
+	}
+
+	goodsB := &models.Goods{
+		Name: "测试商品B",
+		UserId: userId,
+	}
+
+	goodsA = service.AddGoods(goodsA)
+	goodsB = service.AddGoods(goodsB)
+
+	goodsList := []*models.Goods{
+		goodsA, goodsB,
+	}
+
+	orderA := initAddOrder(userId, customerA, goodsList)
+	initAddOrder(userId, customerB, goodsList)
+	orderC := initAddOrder(userId, customerC, goodsList)
+
+	orderA.Status = models.OrderStatusDone
+	orderC.Status = models.OrderStatusDone
+	service.UpdateOrder(orderA)
+	service.UpdateOrder(orderC)
+}
+
+func initAddOrder(userId string, customer *models.Customer, goods []*models.Goods) *models.Order {
+	order := &models.Order{
+		UserId: userId,
+		Name: customer.Name,
+		Tel: customer.Tel,
+		Address: customer.Address,
+		TotalPrice: 888,
+		Note: "尽快发货",
+	}
+	order = service.AddOrder(order)
+	for _, goods := range goods {
+		orderItem := &models.OrderItem{
+			OrderId: order.Id,
+			GoodsId: goods.Id,
+			Quantity: 2,
+		}
+		orderItem = service.AddOrderItem(orderItem)
+	}
+
+	return order
 }

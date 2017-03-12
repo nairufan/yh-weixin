@@ -8,6 +8,7 @@ import (
 	"time"
 	"bytes"
 	"math/rand"
+	"fmt"
 )
 
 type loginResponse struct {
@@ -15,7 +16,8 @@ type loginResponse struct {
 }
 
 func Login() string {
-	r, _ := http.NewRequest("GET", "/api/user/mock-login", nil)
+	loginUrl := fmt.Sprintf("/api/user/mock-login?id=test%s", GenRandomString(4))
+	r, _ := http.NewRequest("GET", loginUrl, nil)
 	w := httptest.NewRecorder()
 	beego.BeeApp.Handlers.ServeHTTP(w, r)
 	loginResponse := &loginResponse{}
@@ -35,9 +37,9 @@ func GenRandomString(n int) string {
 	return string(b)
 }
 
-func DoRequest(input interface{}, output interface{}, sessionId string) {
+func DoRequest(method string, url string, input interface{}, output interface{}, sessionId string) {
 	b, _ := json.Marshal(input)
-	r, _ := http.NewRequest("POST", "/api/goods/merge", bytes.NewReader(b))
+	r, _ := http.NewRequest(method, url, bytes.NewReader(b))
 	r.AddCookie(&http.Cookie{
 		Name: "sessionId",
 		Value: sessionId,
@@ -45,6 +47,6 @@ func DoRequest(input interface{}, output interface{}, sessionId string) {
 	})
 	w := httptest.NewRecorder()
 	beego.BeeApp.Handlers.ServeHTTP(w, r)
-
+	beego.Info(string(w.Body.Bytes()))
 	json.Unmarshal(w.Body.Bytes(), output)
 }

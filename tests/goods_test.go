@@ -23,15 +23,29 @@ func TestGoods(t *testing.T) {
 
 	sessionId := Login()
 
-	Convey("Test Create Goods\n", t, func() {
+	Convey("Test Create ,Update and Get Goods\n", t, func() {
 		goodsRequest := &models.Goods{
-			Name: "TestUser_" + GenRandomString(5),
+			Name: "TestGoods_" + GenRandomString(5),
 		}
 		goods := &models.Goods{}
 
-		DoRequest(goodsRequest, goods, sessionId)
+		DoRequest("POST", "/api/goods/merge", goodsRequest, goods, sessionId)
 
 		So(goods.Id, ShouldNotBeNil)
 		So(goods.Name, ShouldEqual, goodsRequest.Name)
+
+		Convey("Test Update Goods\n", func() {
+			goods.Name = "TestGoods_" + GenRandomString(5)
+			newGoods := &models.Goods{}
+
+			DoRequest("POST", "/api/goods/merge", goods, newGoods, sessionId)
+
+			So(goods.Name, ShouldEqual, newGoods.Name)
+		})
+
+		goodsList := []*models.Goods{}
+		DoRequest("GET", "/api/goods/list", nil, &goodsList, sessionId)
+		So(goodsList, ShouldHaveLength, 1)
 	})
+
 }
