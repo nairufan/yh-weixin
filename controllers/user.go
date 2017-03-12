@@ -168,12 +168,12 @@ func initUserDefaultData(userId string) {
 	customerC = service.AddCustomer(customerC)
 
 	goodsA := &models.Goods{
-		Name: "测试商品A",
+		Name: "小番茄",
 		UserId: userId,
 	}
 
 	goodsB := &models.Goods{
-		Name: "测试商品B",
+		Name: "西瓜",
 		UserId: userId,
 	}
 
