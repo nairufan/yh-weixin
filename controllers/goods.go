@@ -16,7 +16,7 @@ type goodsRequest struct {
 }
 
 // @router /merge [post]
-func (c *GoodsController) MergeCustomer() {
+func (c *GoodsController) MergeGoods() {
 	var request goodsRequest
 	c.Bind(&request)
 

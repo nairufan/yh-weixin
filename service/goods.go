@@ -55,9 +55,16 @@ func RemoveGoodsById(id string) {
 		panic(apperror.NewInvalidParameterError("id"))
 	}
 
+	goods := GetGoodsById(id)
+	if goods == nil {
+		panic(apperror.NewResourceNotFoundError("goods"))
+	}
+	goods.Status = models.GoodsStatusClose
+
 	session := mongo.Get()
 	defer session.Close()
-	session.RemoveId(collectionGoods, id)
+
+	session.MustUpdateId(collectionGoods, id, goods)
 }
 
 func GetGoods(userId string, offset int, limit int) []*models.Goods {
@@ -70,7 +77,11 @@ func GetGoods(userId string, offset int, limit int) []*models.Goods {
 		Limit: &limit,
 		Offset: &offset,
 	}
-	session.MustFindWithOptions(collectionGoods, bson.M{"userId": userId}, option, &goods)
+	query := bson.M{}
+	query["userId"] = userId
+	query["status"] = bson.M{"$ne": models.GoodsStatusClose}
+
+	session.MustFindWithOptions(collectionGoods, query, option, &goods)
 	return goods
 }
 
