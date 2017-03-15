@@ -142,6 +142,19 @@ func (u *UserController) BuyHistory() {
 	u.ServeJSON()
 }
 
+// @router /statistics [get]
+func (u *UserController) UserStatistics() {
+	response := models.StatisticResponse{}
+	now := time.Now()
+	start := now.AddDate(0, 0, -10)
+	statistics := service.UserStatistics(start, now)
+	total := service.UserCount()
+	response.Statistics = statistics
+	response.Total = total
+	u.Data["json"] = response
+	u.ServeJSON()
+}
+
 func initUserDefaultData(userId string) {
 
 	customerA := &models.Customer{

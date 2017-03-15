@@ -6,6 +6,7 @@ import (
 	"github.com/nairufan/yh-weixin/apperror"
 	"strconv"
 	"reflect"
+	"time"
 )
 
 var changeOrderFiledMap map[string]string
@@ -197,6 +198,19 @@ func (o *OrderController) GetOrders() {
 	goodsList := service.GetGoodsByIds(goodsIds)
 	response.OrderItemMap = orderItemMap
 	response.GoodsMap = ConvertGoodsMap(goodsList)
+	o.Data["json"] = response
+	o.ServeJSON()
+}
+
+// @router /statistics [get]
+func (o *OrderController) OrderStatistics() {
+	response := models.StatisticResponse{}
+	now := time.Now()
+	start := now.AddDate(0, 0, -10)
+	statistics := service.OrderStatistics(start, now)
+	total := service.OrderCount()
+	response.Statistics = statistics
+	response.Total = total
 	o.Data["json"] = response
 	o.ServeJSON()
 }

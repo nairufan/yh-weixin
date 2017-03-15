@@ -4,6 +4,7 @@ import (
 	"github.com/nairufan/yh-weixin/service"
 	"github.com/nairufan/yh-weixin/models"
 	"strconv"
+	"time"
 )
 
 type GoodsController struct {
@@ -56,5 +57,18 @@ func (c *GoodsController) GetGoods() {
 
 	goods := service.GetGoods(c.GetUserId(), offsetInt, limitInt)
 	c.Data["json"] = goods
+	c.ServeJSON()
+}
+
+// @router /statistics [get]
+func (c *GoodsController) GoodsStatistics() {
+	response := models.StatisticResponse{}
+	now := time.Now()
+	start := now.AddDate(0, 0, -10)
+	statistics := service.GoodsStatistics(start, now)
+	total := service.GoodsCount()
+	response.Statistics = statistics
+	response.Total = total
+	c.Data["json"] = response
 	c.ServeJSON()
 }

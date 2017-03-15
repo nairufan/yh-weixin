@@ -5,6 +5,7 @@ import (
 	"github.com/nairufan/yh-weixin/apperror"
 	"github.com/nairufan/yh-weixin/db/mongo"
 	"gopkg.in/mgo.v2/bson"
+	"time"
 )
 
 const (
@@ -33,4 +34,16 @@ func GetUserByOpenId(openId string) *models.User {
 		return users[0]
 	}
 	return nil
+}
+
+func UserStatistics(start time.Time, end time.Time) []*models.Statistic {
+	results := []*models.Statistic{}
+	statistics(start, end, collectionUser, &results)
+	return results
+}
+
+func UserCount() int {
+	session := mongo.Get()
+	defer session.Close()
+	return session.MustCount(collectionUser)
 }

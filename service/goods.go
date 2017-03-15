@@ -5,6 +5,7 @@ import (
 	"github.com/nairufan/yh-weixin/apperror"
 	"github.com/nairufan/yh-weixin/db/mongo"
 	"gopkg.in/mgo.v2/bson"
+	"time"
 )
 
 const (
@@ -92,4 +93,16 @@ func GetGoodsByIds(ids []string) []*models.Goods {
 
 	session.MustFind(collectionGoods, bson.M{"_id": bson.M{"$in": ids}}, &goods)
 	return goods
+}
+
+func GoodsStatistics(start time.Time, end time.Time) []*models.Statistic {
+	results := []*models.Statistic{}
+	statistics(start, end, collectionGoods, &results)
+	return results
+}
+
+func GoodsCount() int {
+	session := mongo.Get()
+	defer session.Close()
+	return session.MustCount(collectionGoods)
 }

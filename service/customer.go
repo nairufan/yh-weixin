@@ -5,6 +5,7 @@ import (
 	"github.com/nairufan/yh-weixin/db/mongo"
 	"github.com/nairufan/yh-weixin/apperror"
 	"gopkg.in/mgo.v2/bson"
+	"time"
 )
 
 const (
@@ -92,4 +93,31 @@ func GetCustomerByIds(ids []string) []*models.Customer {
 
 	session.MustFind(collectionCustomer, bson.M{"_id": bson.M{"$in": ids}}, &customers)
 	return customers
+}
+
+func CustomerStatistics(start time.Time, end time.Time) []*models.Statistic {
+	results := []*models.Statistic{}
+	statistics(start, end, collectionCustomer, &results)
+	return results
+}
+
+func CustomerCount() int {
+	session := mongo.Get()
+	defer session.Close()
+	return session.MustCount(collectionCustomer)
+}
+
+func statistics(start time.Time, end time.Time, collection string, result interface{}) {
+	session := mongo.Get()
+	defer session.Close()
+	group := bson.M{}
+	match := bson.M{}
+
+	year := bson.M{"$substr": []interface{}{"$createdTime", 0, 4}}
+	month := bson.M{"$substr": []interface{}{"$createdTime", 5, 2}}
+	day := bson.M{"$substr": []interface{}{"$createdTime", 8, 2}}
+	date := bson.M{"$concat": []interface{}{year, "-", month, "-", day}}
+	group["$group"] = bson.M{"_id": date, "count": bson.M{"$sum": 1}}
+	match["$match"] = bson.M{"createdTime": bson.M{"$gte": start, "$lte": end}}
+	session.MustPipeAll(collection, []bson.M{match, group}, result)
 }

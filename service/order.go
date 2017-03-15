@@ -5,6 +5,7 @@ import (
 	"github.com/nairufan/yh-weixin/apperror"
 	"github.com/nairufan/yh-weixin/db/mongo"
 	"gopkg.in/mgo.v2/bson"
+	"time"
 )
 
 const (
@@ -168,4 +169,16 @@ func checkOrderStatus(status string) {
 	if (status != "" && status != "pending" && status != "done" && status != "close") {
 		panic(apperror.NewInvalidParameterError("status: pending, done, close"))
 	}
+}
+
+func OrderStatistics(start time.Time, end time.Time) []*models.Statistic {
+	results := []*models.Statistic{}
+	statistics(start, end, collectionOrder, &results)
+	return results
+}
+
+func OrderCount() int {
+	session := mongo.Get()
+	defer session.Close()
+	return session.MustCount(collectionOrder)
 }
