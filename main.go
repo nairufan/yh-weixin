@@ -15,9 +15,18 @@ func main() {
 		beego.BConfig.WebConfig.StaticDir["/swagger"] = "swagger"
 	}
 	// api filter
-	beego.InsertFilter("/api/customer/*", beego.BeforeRouter, filters.LoginCheck)
-	beego.InsertFilter("/api/goods/*", beego.BeforeRouter, filters.LoginCheck)
-	beego.InsertFilter("/api/order/*", beego.BeforeRouter, filters.LoginCheck)
+	beego.InsertFilter("/api/customer/merge", beego.BeforeRouter, filters.LoginCheck)
+	beego.InsertFilter("/api/customer/remove", beego.BeforeRouter, filters.LoginCheck)
+	beego.InsertFilter("/api/customer/list", beego.BeforeRouter, filters.LoginCheck)
+	beego.InsertFilter("/api/goods/merge", beego.BeforeRouter, filters.LoginCheck)
+	beego.InsertFilter("/api/goods/remove", beego.BeforeRouter, filters.LoginCheck)
+	beego.InsertFilter("/api/goods/list", beego.BeforeRouter, filters.LoginCheck)
+	beego.InsertFilter("/api/order/create", beego.BeforeRouter, filters.LoginCheck)
+	beego.InsertFilter("/api/order/update", beego.BeforeRouter, filters.LoginCheck)
+	beego.InsertFilter("/api/order/update-items", beego.BeforeRouter, filters.LoginCheck)
+	beego.InsertFilter("/api/order/remove-item", beego.BeforeRouter, filters.LoginCheck)
+	beego.InsertFilter("/api/order/merge-item", beego.BeforeRouter, filters.LoginCheck)
+	beego.InsertFilter("/api/order/list", beego.BeforeRouter, filters.LoginCheck)
 	beego.InsertFilter("/api/user/buy-history", beego.BeforeRouter, filters.LoginCheck)
 	beego.Run()
 }
