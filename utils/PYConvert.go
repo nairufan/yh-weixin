@@ -14,7 +14,9 @@ func ConvertPY(str string) string {
 	} else {
 		args := pinyin.NewArgs()
 		names := pinyin.LazyPinyin(str, args)
-		c = string(names[0][0])
+		if names != nil && len(names) > 0 {
+			c = string(names[0][0])
+		}
 	}
 
 	return strings.ToUpper(c)
