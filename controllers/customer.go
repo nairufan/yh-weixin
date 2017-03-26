@@ -83,3 +83,13 @@ func (c *CustomerController) CustomerStatistics() {
 	c.Data["json"] = response
 	c.ServeJSON()
 }
+
+// @router /init_py [get]
+func (c *CustomerController) CustomerPY() {
+	customers := service.GetNoPYCustomers()
+	for _, c := range customers {
+		service.UpdateCustomer(c)
+	}
+	c.Data["json"] = customers
+	c.ServeJSON()
+}

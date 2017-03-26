@@ -6,6 +6,7 @@ import (
 	"github.com/nairufan/yh-weixin/apperror"
 	"gopkg.in/mgo.v2/bson"
 	"time"
+	"github.com/nairufan/yh-weixin/utils"
 )
 
 const (
@@ -20,6 +21,9 @@ func AddCustomer(customer *models.Customer) *models.Customer {
 	if customer.UserId == "" {
 		panic(apperror.NewInvalidParameterError("userId"))
 	}
+
+	customer.NamePY = utils.ConvertPY(customer.Name)
+
 	session := mongo.Get()
 	defer session.Close()
 	session.MustInsert(collectionCustomer, customer)
@@ -34,6 +38,7 @@ func UpdateCustomer(customer *models.Customer) *models.Customer {
 	c := GetCustomerById(customer.Id)
 	c.Tel = customer.Tel
 	c.Name = customer.Name
+	c.NamePY = utils.ConvertPY(customer.Name)
 	c.Address = customer.Address
 	c.Note = customer.Note
 
@@ -67,7 +72,7 @@ func GetCustomers(userId string, offset int, limit int) []*models.Customer {
 	customers := []*models.Customer{}
 
 	option := mongo.Option{
-		Sort: []string{"+name"},
+		Sort: []string{"+name_py"},
 		Limit: &limit,
 		Offset: &offset,
 	}
@@ -105,6 +110,14 @@ func CustomerCount() int {
 	session := mongo.Get()
 	defer session.Close()
 	return session.MustCount(collectionCustomer)
+}
+
+func GetNoPYCustomers() []*models.Customer {
+	session := mongo.Get()
+	defer session.Close()
+	customers := []*models.Customer{}
+	session.MustFind(collectionCustomer, bson.M{"name_py": ""}, &customers)
+	return customers
 }
 
 func statistics(start time.Time, end time.Time, collection string, result interface{}) {
