@@ -86,7 +86,7 @@ func (c *CustomerController) CustomerStatistics() {
 
 // @router /init_py [get]
 func (c *CustomerController) CustomerPY() {
-	customers := service.GetNoPYCustomers()
+	customers := service.GetAllCustomers()
 	for _, c := range customers {
 		service.UpdateCustomer(c)
 	}

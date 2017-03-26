@@ -112,11 +112,11 @@ func CustomerCount() int {
 	return session.MustCount(collectionCustomer)
 }
 
-func GetNoPYCustomers() []*models.Customer {
+func GetAllCustomers() []*models.Customer {
 	session := mongo.Get()
 	defer session.Close()
 	customers := []*models.Customer{}
-	session.MustFind(collectionCustomer, bson.M{"name_py": ""}, &customers)
+	session.MustFind(collectionCustomer, bson.M{}, &customers)
 	return customers
 }
 
