@@ -6,6 +6,7 @@ import (
 	"github.com/nairufan/yh-weixin/db/mongo"
 	"gopkg.in/mgo.v2/bson"
 	"time"
+	"github.com/astaxie/beego"
 )
 
 const (
@@ -131,6 +132,24 @@ func GetOrders(userId string, offset int, limit int) []*models.Order {
 	query["userId"] = userId
 	query["status"] = bson.M{"$ne": models.OrderStatusClose}
 
+	session.MustFindWithOptions(collectionOrder, query, option, &orders)
+	return orders
+}
+
+
+func GetOrdersByTimeRange(userId string, start time.Time, end time.Time) []*models.Order {
+	session := mongo.Get()
+	defer session.Close()
+	orders := []*models.Order{}
+
+	option := mongo.Option{
+		Sort: []string{"-createdTime"},
+	}
+	query := bson.M{}
+	query["userId"] = userId
+	query["createdTime"] = bson.M{"$gte": start, "$lt": end}
+
+	beego.Info(query)
 	session.MustFindWithOptions(collectionOrder, query, option, &orders)
 	return orders
 }

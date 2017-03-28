@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"reflect"
 	"time"
+	"github.com/nairufan/yh-weixin/utils"
 )
 
 var changeOrderFiledMap map[string]string
@@ -215,6 +216,39 @@ func (o *OrderController) OrderStatistics() {
 	o.ServeJSON()
 }
 
+// @router /download [get]
+func (o *OrderController) GetOrdersByRange() {
+	start := o.GetString("start")
+	end := o.GetString("end")
+	if start == "" {
+		start = time.Now().AddDate(0, 0, -1).Format("2006-01-02")
+	}
+	if end == "" {
+		end = time.Now().Format("2006-01-02")
+	}
+	s, err := time.Parse("2006-01-02", start)
+	if err != nil {
+		panic(err)
+	}
+	e, err := time.Parse("2006-01-02", end)
+	if err != nil {
+		panic(err)
+	}
+
+	orders := service.GetOrdersByTimeRange(o.GetUserId(), s, e)
+	orderIds := []string{}
+
+	for _, order := range orders {
+		orderIds = append(orderIds, order.Id)
+	}
+	orderItems := service.GetOrderItems(orderIds)
+	orderItemMap, goodsIds := ConvertOrderItemMap(orderItems)
+	goodsList := service.GetGoodsByIds(goodsIds)
+	goodsMap := ConvertGoodsMap(goodsList)
+
+	utils.Write(o.Ctx, getOrderRecords(orders, orderItemMap, goodsMap))
+}
+
 func mergeCustomer(customerName string, customerTel string, customerAddress string, userId string) *models.Customer {
 	if customerName == "" {
 		panic(apperror.NewParameterRequiredError("customerName"))
@@ -266,6 +300,39 @@ func ConvertGoodsMap(goodsList []*models.Goods) map[string]*models.Goods {
 	}
 
 	return goodsMap
+}
+
+func getOrderRecords(orders []*models.Order, orderItemMap map[string][]*models.OrderItem, goodsMap map[string]*models.Goods) [][]string {
+	results := [][]string{}
+	results = append(results, []string{
+		"电话号码",
+		"姓名",
+		"地址",
+		"快递单号",
+		"总价",
+		"商品",
+		"备注",
+	})
+	for _, order := range orders {
+		record := []string{}
+		record = append(record, order.Tel)
+		record = append(record, order.Name)
+		record = append(record, order.Address)
+		record = append(record, order.Express)
+		record = append(record, strconv.Itoa(order.TotalPrice))
+
+		items := orderItemMap[order.Id]
+		goods := ""
+		for _, item := range items {
+			goods += goodsMap[item.GoodsId].Name + "x" + strconv.Itoa(item.Quantity) + ", "
+		}
+		record = append(record, goods)
+		record = append(record, order.Note)
+
+		results = append(results, record)
+	}
+
+	return results
 }
 
 func init() {
