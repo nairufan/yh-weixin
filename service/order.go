@@ -147,7 +147,7 @@ func GetOrdersByTimeRange(userId string, start time.Time, end time.Time) []*mode
 	}
 	query := bson.M{}
 	query["userId"] = userId
-	query["createdTime"] = bson.M{"$gte": start, "$lt": end}
+	query["createdTime"] = bson.M{"$gte": start, "$lte": end}
 
 	beego.Info(query)
 	session.MustFindWithOptions(collectionOrder, query, option, &orders)

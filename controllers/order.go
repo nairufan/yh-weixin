@@ -8,6 +8,7 @@ import (
 	"reflect"
 	"time"
 	"github.com/nairufan/yh-weixin/utils"
+	"strings"
 )
 
 var changeOrderFiledMap map[string]string
@@ -221,7 +222,7 @@ func (o *OrderController) GetOrdersByRange() {
 	start := o.GetString("start")
 	end := o.GetString("end")
 	if start == "" {
-		start = time.Now().AddDate(0, 0, -1).Format("2006-01-02")
+		start = time.Now().Format("2006-01-02")
 	}
 	if end == "" {
 		end = time.Now().Format("2006-01-02")
@@ -235,7 +236,7 @@ func (o *OrderController) GetOrdersByRange() {
 		panic(err)
 	}
 
-	orders := service.GetOrdersByTimeRange(o.GetUserId(), s, e)
+	orders := service.GetOrdersByTimeRange(o.GetUserId(), s, e.AddDate(0, 0, 1))
 	orderIds := []string{}
 
 	for _, order := range orders {
@@ -245,8 +246,13 @@ func (o *OrderController) GetOrdersByRange() {
 	orderItemMap, goodsIds := ConvertOrderItemMap(orderItems)
 	goodsList := service.GetGoodsByIds(goodsIds)
 	goodsMap := ConvertGoodsMap(goodsList)
-
-	utils.Write(o.Ctx, getOrderRecords(orders, orderItemMap, goodsMap))
+	fileName := ""
+	if start == end {
+		fileName = strings.Replace(start, "-", "", -1)
+	} else {
+		fileName = strings.Replace(start, "-", "", -1) + "～" + strings.Replace(end, "-", "", -1)
+	}
+	utils.Write(o.Ctx, getOrderRecords(orders, orderItemMap, goodsMap), fileName)
 }
 
 func mergeCustomer(customerName string, customerTel string, customerAddress string, userId string) *models.Customer {
