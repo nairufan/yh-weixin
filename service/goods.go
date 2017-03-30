@@ -6,6 +6,7 @@ import (
 	"github.com/nairufan/yh-weixin/db/mongo"
 	"gopkg.in/mgo.v2/bson"
 	"time"
+	"github.com/nairufan/yh-weixin/utils"
 )
 
 const (
@@ -20,6 +21,7 @@ func AddGoods(goods *models.Goods) *models.Goods {
 	if goods.UserId == "" {
 		panic(apperror.NewInvalidParameterError("userId"))
 	}
+	goods.NamePY = utils.ConvertPY(goods.Name)
 	session := mongo.Get()
 	defer session.Close()
 	session.MustInsert(collectionGoods, goods)
@@ -36,7 +38,7 @@ func UpdateGoods(goods *models.Goods) *models.Goods {
 	}
 	g := GetGoodsById(goods.Id)
 	g.Name = goods.Name
-
+	g.NamePY = utils.ConvertPY(goods.Name)
 	session := mongo.Get()
 	defer session.Close()
 	session.MustUpdateId(collectionGoods, goods.Id, g)
@@ -74,7 +76,7 @@ func GetGoods(userId string, offset int, limit int) []*models.Goods {
 	goods := []*models.Goods{}
 
 	option := mongo.Option{
-		Sort: []string{"+name"},
+		Sort: []string{"+name_py"},
 		Limit: &limit,
 		Offset: &offset,
 	}
@@ -105,4 +107,12 @@ func GoodsCount() int {
 	session := mongo.Get()
 	defer session.Close()
 	return session.MustCount(collectionGoods)
+}
+
+func GetAllGoods() []*models.Goods {
+	session := mongo.Get()
+	defer session.Close()
+	goods := []*models.Goods{}
+	session.MustFind(collectionGoods, bson.M{}, &goods)
+	return goods
 }

@@ -12,8 +12,8 @@ type GoodsController struct {
 }
 
 type goodsRequest struct {
-	Id      string     `json:"id"`
-	Name    string     `json:"name" validate:"required"`
+	Id   string     `json:"id"`
+	Name string     `json:"name" validate:"required"`
 }
 
 // @router /merge [post]
@@ -70,5 +70,15 @@ func (c *GoodsController) GoodsStatistics() {
 	response.Statistics = statistics
 	response.Total = total
 	c.Data["json"] = response
+	c.ServeJSON()
+}
+
+// @router /init_py [get]
+func (c *GoodsController) GoodsPY() {
+	goods := service.GetAllGoods()
+	for _, g := range goods {
+		service.UpdateGoods(g)
+	}
+	c.Data["json"] = goods
 	c.ServeJSON()
 }

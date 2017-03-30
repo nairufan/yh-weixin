@@ -66,9 +66,35 @@ func (c *CustomerController) GetCustomers() {
 	offsetInt, _ := strconv.Atoi(offset)
 	limitInt, _ := strconv.Atoi(limit)
 
-	goods := service.GetCustomers(c.GetUserId(), offsetInt, limitInt)
-	c.Data["json"] = goods
+	customers := service.GetCustomers(c.GetUserId(), offsetInt, limitInt)
+	c.Data["json"] = customers
 	c.ServeJSON()
+}
+
+// @router /list_group [get]
+func (c *CustomerController) GetCustomerGroups() {
+	offset := c.GetString("offset")
+	limit := c.GetString("limit")
+	offsetInt, _ := strconv.Atoi(offset)
+	limitInt, _ := strconv.Atoi(limit)
+
+	customers := service.GetCustomers(c.GetUserId(), offsetInt, limitInt)
+	c.Data["json"] = getCustomerGroups(customers)
+	c.ServeJSON()
+}
+
+func getCustomerGroups(customers []*models.Customer) map[string][]*models.Customer {
+	customerGroups := map[string][]*models.Customer{}
+	for _, customer := range customers {
+		cs := customerGroups[customer.NamePY]
+		if cs == nil {
+			cs = []*models.Customer{}
+		}
+		cs = append(cs, customer)
+		customerGroups[customer.NamePY] = cs
+	}
+
+	return customerGroups
 }
 
 // @router /statistics [get]
