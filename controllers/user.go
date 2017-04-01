@@ -1,15 +1,11 @@
 package controllers
 
 import (
-	"github.com/astaxie/beego"
-	"encoding/json"
-	"io/ioutil"
-	"fmt"
-	"net/http"
 	"strconv"
 	"time"
 	"github.com/nairufan/yh-weixin/service"
 	"github.com/nairufan/yh-weixin/models"
+	"github.com/nairufan/yh-weixin/agent"
 )
 
 type UserController struct {
@@ -30,31 +26,13 @@ type loginResponse struct {
 // @router /wx-login [get]
 func (u *UserController) WxExchangeCode() {
 	code := u.GetString("code")
-	url := beego.AppConfig.String("wx.exChangeCodeUrl")
-	appId := beego.AppConfig.String("wx.appid")
-	secret := beego.AppConfig.String("wx.secret")
-	url = fmt.Sprintf(url, appId, secret, code)
-	resp, err := http.Get(url)
-	if err != nil {
-		panic(err)
-	}
-	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		panic(err)
-	}
-	beego.Info(string(body))
-	exResponse := &exChangeResponse{}
-	json.Unmarshal(body, exResponse)
-	if exResponse.ErrMsg != "" {
-		beego.Error(exResponse.ErrCode)
-		beego.Error(exResponse.ErrMsg)
-		panic(exResponse.ErrMsg)
-	}
-	user := service.GetUserByOpenId(exResponse.Openid)
-	if user == nil {
+
+	token := agent.MustGetAccessToken(code)
+	user := service.GetUserByOpenId(token.OpenId)
+	if user == nil || user.UnionId == "" {
 		user = service.AddUser(&models.User{
-			OpenId: exResponse.Openid,
+			OpenId: token.OpenId,
+			UnionId: token.UnionId,
 		})
 		initUserDefaultData(user.Id)
 	}
