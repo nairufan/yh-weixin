@@ -25,6 +25,27 @@ func AddUser(user *models.User) *models.User {
 	return user
 }
 
+func UpdateUser(user *models.User) *models.User {
+	if user.Id == "" {
+		panic(apperror.NewInvalidParameterError("id"))
+	}
+	u := GetUserById(user.Id)
+	u.UnionId = user.UnionId
+
+	session := mongo.Get()
+	defer session.Close()
+	session.MustUpdateId(collectionUser, u.Id, u)
+	return u
+}
+
+func GetUserById(id string) *models.User {
+	session := mongo.Get()
+	defer session.Close()
+	user := &models.User{}
+	session.MustFindId(collectionUser, id, user)
+	return user
+}
+
 func GetUserByOpenId(openId string) *models.User {
 	session := mongo.Get()
 	defer session.Close()

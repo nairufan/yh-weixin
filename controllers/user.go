@@ -29,13 +29,18 @@ func (u *UserController) WxExchangeCode() {
 
 	token := agent.MustGetAccessToken(code)
 	user := service.GetUserByOpenId(token.OpenId)
-	if user == nil || user.UnionId == "" {
+
+	if user == nil {
 		user = service.AddUser(&models.User{
 			OpenId: token.OpenId,
 			UnionId: token.UnionId,
 		})
 		initUserDefaultData(user.Id)
+	} else if user.UnionId == "" {
+		user.UnionId = token.UnionId
+		user = service.UpdateUser(user)
 	}
+
 	u.SetUserId(user.Id)
 
 	response := &loginResponse{

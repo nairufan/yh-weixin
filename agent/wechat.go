@@ -78,7 +78,6 @@ func MustGetAccessToken(code string) *TokenResponse {
 		beego.Error(response.ErrMsg)
 		panic(response.ErrMsg)
 	}
-	beego.Info(response)
 	return response
 }
 
