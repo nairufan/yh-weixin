@@ -27,7 +27,7 @@ type loginResponse struct {
 func (u *UserController) WxExchangeCode() {
 	code := u.GetString("code")
 
-	token := agent.MustGetAccessToken(code)
+	token := agent.MustGetXCXAccessToken(code)
 	user := service.GetUserByOpenId(token.OpenId)
 
 	if user == nil {
@@ -47,6 +47,21 @@ func (u *UserController) WxExchangeCode() {
 		SessionId: u.CruSession.SessionID(),
 	}
 	u.Data["json"] = response
+	u.ServeJSON()
+}
+
+// @router /wx-qrc-login [get]
+func (u *UserController) WxQRCLogin() {
+	code := u.GetString("code")
+	token := agent.MustGetQRAccessToken(code)
+	user := service.GetUserByUnionId(token.UnionId)
+	if user == nil {
+		u.Ctx.Redirect(404, "/404")
+		return;
+	}
+	u.SetUserId(user.Id)
+
+	u.Data["json"] = "true"
 	u.ServeJSON()
 }
 

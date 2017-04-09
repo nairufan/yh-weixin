@@ -54,10 +54,20 @@ type TokenResponse struct {
 	ErrMsg       string       `json:"errmsg"`
 }
 
-func MustGetAccessToken(code string) *TokenResponse {
-	at_url := beego.AppConfig.String("wx.access_token")
+func MustGetXCXAccessToken(code string) *TokenResponse {
 	appId := beego.AppConfig.String("wx.appid")
 	secret := beego.AppConfig.String("wx.secret")
+	return MustGetAccessToken(code, appId, secret)
+}
+
+func MustGetQRAccessToken(code string) *TokenResponse {
+	appId := beego.AppConfig.String("wx.qr.appid")
+	secret := beego.AppConfig.String("wx.qr.secret")
+	return MustGetAccessToken(code, appId, secret)
+}
+
+func MustGetAccessToken(code string, appId string, secret string) *TokenResponse {
+	at_url := beego.AppConfig.String("wx.access_token")
 	at_url = fmt.Sprintf(at_url, appId, secret, code)
 	resp, err := http.Get(at_url)
 	if err != nil {

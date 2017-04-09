@@ -57,6 +57,17 @@ func GetUserByOpenId(openId string) *models.User {
 	return nil
 }
 
+func GetUserByUnionId(unionId string) *models.User {
+	session := mongo.Get()
+	defer session.Close()
+	users := []*models.User{}
+	session.MustFind(collectionUser, bson.M{"unionid": unionId}, &users)
+	if len(users) > 0 {
+		return users[0]
+	}
+	return nil
+}
+
 func UserStatistics(start time.Time, end time.Time) []*models.Statistic {
 	results := []*models.Statistic{}
 	statistics(start, end, collectionUser, &results)
