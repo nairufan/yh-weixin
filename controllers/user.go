@@ -6,6 +6,7 @@ import (
 	"github.com/nairufan/yh-weixin/service"
 	"github.com/nairufan/yh-weixin/models"
 	"github.com/nairufan/yh-weixin/agent"
+	"github.com/astaxie/beego"
 )
 
 type UserController struct {
@@ -59,6 +60,7 @@ func (u *UserController) WxQRCLogin() {
 		u.Redirect("/wx/404", 301)
 		return;
 	}
+	beego.Info(user)
 	u.SetUserId(user.Id)
 	u.Redirect("/wx/html/download", 301)
 }
