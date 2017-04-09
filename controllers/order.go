@@ -25,7 +25,7 @@ type orderGoods struct {
 type createOrderRequest struct {
 	CustomerName    string           `json:"customerName" validate:"required"`
 	CustomerTel     string           `json:"customerTel" validate:"required"`
-	CustomerAddress string           `json:"customerAddress" validate:"required"`
+	CustomerAddress string           `json:"customerAddress"`
 	GoodsList       []*orderGoods    `json:"goodsList" validate:"required"`
 	TotalPrice      int              `json:"totalPrice"`
 	Note            string           `json:"note"`
@@ -261,9 +261,6 @@ func mergeCustomer(customerName string, customerTel string, customerAddress stri
 	}
 	if customerTel == "" {
 		panic(apperror.NewParameterRequiredError("customerTel"))
-	}
-	if customerAddress == "" {
-		panic(apperror.NewParameterRequiredError("customerAddress"))
 	}
 	customer := service.GetCustomerByTel(userId, customerTel)
 	if customer != nil {
