@@ -56,11 +56,11 @@ func (u *UserController) WxQRCLogin() {
 	token := agent.MustGetQRAccessToken(code)
 	user := service.GetUserByUnionId(token.UnionId)
 	if user == nil {
-		u.Ctx.Redirect(404, "/404")
+		u.Redirect("/wx/404", 301)
 		return;
 	}
 	u.SetUserId(user.Id)
-	u.Ctx.Redirect(200, "/wx/html/download")
+	u.Redirect("/wx/html/download", 301)
 }
 
 // @router /mock-login [get]
