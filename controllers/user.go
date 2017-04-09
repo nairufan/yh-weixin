@@ -60,9 +60,7 @@ func (u *UserController) WxQRCLogin() {
 		return;
 	}
 	u.SetUserId(user.Id)
-
-	u.Data["json"] = "true"
-	u.ServeJSON()
+	u.Ctx.Redirect(200, "/wx/html/download")
 }
 
 // @router /mock-login [get]

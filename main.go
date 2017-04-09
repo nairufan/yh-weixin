@@ -14,6 +14,9 @@ func main() {
 		beego.BConfig.WebConfig.DirectoryIndex = true
 		beego.BConfig.WebConfig.StaticDir["/swagger"] = "swagger"
 	}
+
+	beego.BConfig.WebConfig.StaticDir["/html/js"] = "static/js"
+
 	// api filter
 	beego.InsertFilter("/api/customer/merge", beego.BeforeRouter, filters.LoginCheck)
 	beego.InsertFilter("/api/customer/remove", beego.BeforeRouter, filters.LoginCheck)
@@ -28,5 +31,9 @@ func main() {
 	beego.InsertFilter("/api/order/merge-item", beego.BeforeRouter, filters.LoginCheck)
 	beego.InsertFilter("/api/order/list", beego.BeforeRouter, filters.LoginCheck)
 	beego.InsertFilter("/api/user/buy-history", beego.BeforeRouter, filters.LoginCheck)
+
+	//html page
+	beego.InsertFilter("/html/download", beego.BeforeRouter, filters.LoginCheck)
+
 	beego.Run()
 }

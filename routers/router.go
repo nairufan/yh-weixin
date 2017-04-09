@@ -9,7 +9,7 @@ package routers
 
 import (
 	"github.com/nairufan/yh-weixin/controllers"
-
+	"github.com/nairufan/yh-weixin/controllers/pages"
 	"github.com/astaxie/beego"
 )
 
@@ -37,4 +37,6 @@ func init() {
 		),
 	)
 	beego.AddNamespace(ns)
+	beego.Get("/html/download", pages.Download)
+	beego.Get("/html/qrcode", pages.Qrcode)
 }
