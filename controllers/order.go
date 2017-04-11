@@ -252,7 +252,7 @@ func (o *OrderController) GetOrdersByRange() {
 	} else {
 		fileName = strings.Replace(start, "-", "", -1) + "～" + strings.Replace(end, "-", "", -1)
 	}
-	utils.Write(o.Ctx, getOrderRecords(orders, orderItemMap, goodsMap), fileName)
+	utils.WriteXlsx(o.Ctx, getOrderRecords(orders, orderItemMap, goodsMap), fileName)
 }
 
 func mergeCustomer(customerName string, customerTel string, customerAddress string, userId string) *models.Customer {
@@ -308,21 +308,21 @@ func ConvertGoodsMap(goodsList []*models.Goods) map[string]*models.Goods {
 func getOrderRecords(orders []*models.Order, orderItemMap map[string][]*models.OrderItem, goodsMap map[string]*models.Goods) [][]string {
 	results := [][]string{}
 	results = append(results, []string{
-		"电话号码",
+		"日期",
 		"姓名",
+		"电话号码",
 		"地址",
-		"快递单号",
-		"总价",
 		"商品",
+		"总价",
 		"备注",
+		"快递单号",
 	})
 	for _, order := range orders {
 		record := []string{}
-		record = append(record, order.Tel)
+		record = append(record, order.CreatedTime.Format("2006-01-02"))
 		record = append(record, order.Name)
+		record = append(record, order.Tel)
 		record = append(record, order.Address)
-		record = append(record, order.Express)
-		record = append(record, strconv.Itoa(order.TotalPrice))
 
 		items := orderItemMap[order.Id]
 		goods := ""
@@ -330,9 +330,11 @@ func getOrderRecords(orders []*models.Order, orderItemMap map[string][]*models.O
 			goods += goodsMap[item.GoodsId].Name + "x" + strconv.Itoa(item.Quantity) + ", "
 		}
 		record = append(record, goods)
+		record = append(record, strconv.Itoa(order.TotalPrice))
 		record = append(record, order.Note)
 
 		results = append(results, record)
+		record = append(record, order.Express)
 	}
 
 	return results
