@@ -332,9 +332,9 @@ func getOrderRecords(orders []*models.Order, orderItemMap map[string][]*models.O
 		record = append(record, goods)
 		record = append(record, strconv.Itoa(order.TotalPrice))
 		record = append(record, order.Note)
+		record = append(record, order.Express)
 
 		results = append(results, record)
-		record = append(record, order.Express)
 	}
 
 	return results
