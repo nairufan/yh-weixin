@@ -24,9 +24,9 @@ type orderGoods struct {
 
 type createOrderRequest struct {
 	CustomerName    string           `json:"customerName" validate:"required"`
-	CustomerTel     string           `json:"customerTel" validate:"required"`
+	CustomerTel     string           `json:"customerTel"`
 	CustomerAddress string           `json:"customerAddress"`
-	GoodsList       []*orderGoods    `json:"goodsList" validate:"required"`
+	GoodsList       []*orderGoods    `json:"goodsList"`
 	TotalPrice      int              `json:"totalPrice"`
 	Note            string           `json:"note"`
 }
@@ -36,7 +36,14 @@ func (o *OrderController) CreateOrder() {
 	var request createOrderRequest
 	o.Bind(&request)
 
-	customer := mergeCustomer(request.CustomerName, request.CustomerTel, request.CustomerAddress, o.GetUserId())
+	customer := &models.Customer{}
+	if request.CustomerTel != "" {
+		customer = mergeCustomer(request.CustomerName, request.CustomerTel, request.CustomerAddress, o.GetUserId())
+	} else {
+		customer.Name = request.CustomerName
+		customer.Address = request.CustomerAddress
+	}
+
 	order := &models.Order{
 		UserId: o.GetUserId(),
 		Name: customer.Name,
@@ -46,13 +53,15 @@ func (o *OrderController) CreateOrder() {
 		Note: request.Note,
 	}
 	order = service.AddOrder(order)
-	for _, goods := range request.GoodsList {
-		orderItem := &models.OrderItem{
-			OrderId: order.Id,
-			GoodsId: goods.GoodsId,
-			Quantity: goods.Quantity,
+	if request.GoodsList != nil {
+		for _, goods := range request.GoodsList {
+			orderItem := &models.OrderItem{
+				OrderId: order.Id,
+				GoodsId: goods.GoodsId,
+				Quantity: goods.Quantity,
+			}
+			service.AddOrderItem(orderItem)
 		}
-		orderItem = service.AddOrderItem(orderItem)
 	}
 	o.Data["json"] = map[string]bool{"success": true}
 	o.ServeJSON()

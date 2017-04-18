@@ -23,9 +23,6 @@ func AddOrder(order *models.Order) *models.Order {
 	if order.Name == "" {
 		panic(apperror.NewInvalidParameterError("name"))
 	}
-	if order.Tel == "" {
-		panic(apperror.NewInvalidParameterError("tel"))
-	}
 	if order.Address == "" {
 		panic(apperror.NewInvalidParameterError("address"))
 	}
