@@ -22,6 +22,7 @@ type exChangeResponse struct {
 
 type loginResponse struct {
 	SessionId string     `json:"sessionId"`
+	UserId    string     `json:"userId"`
 }
 
 // @router /wx-login [get]
@@ -46,8 +47,41 @@ func (u *UserController) WxExchangeCode() {
 
 	response := &loginResponse{
 		SessionId: u.CruSession.SessionID(),
+		UserId: user.Id,
 	}
 	u.Data["json"] = response
+	u.ServeJSON()
+}
+
+type updateUserRequest struct {
+	OpenId   string           `json:"openId"`
+	NickName string           `json:"nickName"`
+	Gender   int              `json:"gender"`
+	City     string           `json:"city"`
+	Province string           `json:"province"`
+	Country  string           `json:"country"`
+	Avatar   string           `json:"avatarUrl"`
+	UnionId  string           `json:"unionId"`
+}
+
+// @router /update [post]
+func (u *UserController) Update() {
+	var request updateUserRequest
+	u.Bind(&request)
+
+	user := &models.User{
+		Nickname: request.NickName,
+		Gender: request.Gender,
+		City: request.City,
+		Province: request.Province,
+		Country: request.Country,
+		Avatar: request.Avatar,
+		UnionId: request.UnionId,
+	}
+	user.Id = u.GetUserId()
+	user = service.UpdateUser(user)
+
+	u.Data["json"] = user
 	u.ServeJSON()
 }
 
@@ -151,6 +185,54 @@ func (u *UserController) UserStatistics() {
 	response.Total = total
 	u.Data["json"] = response
 	u.ServeJSON()
+}
+
+// @router /agents [get]
+func (u *UserController) Agents() {
+	agents := service.GetUserAgentsByUserId(u.GetUserId())
+	u.Data["json"] = agents
+	u.ServeJSON()
+}
+
+type userAgentData struct {
+	User  *models.User                `json:"user"`
+	Agent *models.UserAgent           `json:"agent"`
+	Order *OrderListResponse          `json:"order"`
+}
+
+// @router /user-agent [get]
+func (u *UserController) UserAgent() {
+	offset := u.GetString("offset")
+	limit := u.GetString("limit")
+	userId := u.GetString("userId")
+	agentId := u.GetString("agentId")
+	key := u.GetString("key")
+
+	response := &userAgentData{}
+	user := service.GetUserById(userId)
+
+	response.User = user
+
+	agentId = GetAgentId(agentId, key)
+	if agentId != "" {
+		agent := service.AddUserAgent(userId, agentId)
+		service.AddUserAgentBind(userId, agentId, key)
+		response.Agent = agent
+	}
+	response.Order = GetAgentOrders(offset, limit, userId, agentId, key)
+	u.Data["json"] = response
+	u.ServeJSON()
+}
+
+func GetAgentId(agentId string, key string) string {
+	if agentId != "" {
+		return agentId
+	}
+	bind := service.GetUserAgentBindByKey(key)
+	if bind != nil {
+		return bind.AgentId
+	}
+	return ""
 }
 
 func initUserDefaultData(userId string) {

@@ -143,6 +143,33 @@ func (o *OrderController) DeleteOrderItem() {
 	o.ServeJSON()
 }
 
+type agentOrderItemRequest struct {
+	AgentId         string            `json:"upAgentId" validate:"required"`
+	AddedOrderIds   []string          `json:"addedOrderIds"`
+	RemovedOrderIds []string          `json:"removedOrderIds"`
+}
+
+// @router /update-agents [post]
+func (o *OrderController) UpdateOrderAgents() {
+	var request agentOrderItemRequest
+	o.Bind(&request)
+
+	if request.AddedOrderIds != nil {
+		for _, id := range request.AddedOrderIds {
+			service.AddOrderAgent(id, request.AgentId)
+		}
+	}
+
+	if request.RemovedOrderIds != nil {
+		for _, id := range request.RemovedOrderIds {
+			service.RemoveOrderAgent(id, request.AgentId)
+		}
+	}
+
+	o.Data["json"] = map[string]bool{"success": true}
+	o.ServeJSON()
+}
+
 type updateOrderItemRequest struct {
 	Id       string     `json:"id" `
 	OrderId  string     `json:"orderId"`
@@ -183,7 +210,7 @@ func updateOrderField(id string, filedName string, fieldValue interface{}) *mode
 	return newOrder
 }
 
-type orderListResponse struct {
+type OrderListResponse struct {
 	OrderList    []*models.Order                          `json:"orderList"`
 	OrderItemMap map[string][]*models.OrderItem           `json:"orderItemMap"`
 	GoodsMap     map[string]*models.Goods                 `json:"goodsMap"`
@@ -195,7 +222,7 @@ func (o *OrderController) GetOrders() {
 	limit := o.GetString("limit")
 	offsetInt, _ := strconv.Atoi(offset)
 	limitInt, _ := strconv.Atoi(limit)
-	response := &orderListResponse{}
+	response := &OrderListResponse{}
 
 	orders := service.GetOrders(o.GetUserId(), offsetInt, limitInt)
 	response.OrderList = orders
@@ -211,6 +238,46 @@ func (o *OrderController) GetOrders() {
 	response.GoodsMap = ConvertGoodsMap(goodsList)
 	o.Data["json"] = response
 	o.ServeJSON()
+}
+
+// @router /agent-order-list [get]
+func (o *OrderController) GetAgentOrderList() {
+	offset := o.GetString("offset")
+	limit := o.GetString("limit")
+	userId := o.GetString("userId")
+	agentId := o.GetString("agentId")
+	key := o.GetString("key")
+	agentId = GetAgentId(agentId, key)
+
+	o.Data["json"] = GetAgentOrders(offset, limit, userId, agentId, key)
+	o.ServeJSON()
+}
+
+func GetAgentOrders(offset string, limit string, userId string, agentId string, key string) *OrderListResponse {
+	offsetInt, _ := strconv.Atoi(offset)
+	limitInt, _ := strconv.Atoi(limit)
+	agentId = GetAgentId(agentId, key)
+
+	response := &OrderListResponse{}
+
+	if agentId == "" {
+		return response
+	}
+
+	orders := service.GetAgentOrders(agentId, userId, offsetInt, limitInt)
+	response.OrderList = orders
+	orderIds := []string{}
+
+	for _, order := range orders {
+		orderIds = append(orderIds, order.Id)
+	}
+	orderItems := service.GetOrderItems(orderIds)
+	orderItemMap, goodsIds := ConvertOrderItemMap(orderItems)
+	goodsList := service.GetGoodsByIds(goodsIds)
+	response.OrderItemMap = orderItemMap
+	response.GoodsMap = ConvertGoodsMap(goodsList)
+
+	return response
 }
 
 // @router /statistics [get]

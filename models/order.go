@@ -10,6 +10,14 @@ type Order struct {
 	Express    string         `bson:"express"  json:"express"`
 	Note       string         `bson:"note"  json:"note"`
 	TotalPrice int            `bson:"totalPrice"  json:"totalPrice"`
+	OwnerId    string         `bson:"ownerId"  json:"ownerId"`
+	Agents     []*OrderAgent  `bson:"upAgents"  json:"upAgents"`
+}
+
+type OrderAgent struct {
+	MetaFields                 `bson:",inline"`
+	UpAgentId string           `bson:"upAgentId"  json:"upAgentId"`
+	Status    string           `bson:"status"  json:"status"`
 }
 
 type OrderItem struct {
@@ -23,4 +31,8 @@ const (
 	OrderStatusPending = "pending"
 	OrderStatusDone = "done"
 	OrderStatusClose = "close"
+)
+
+const (
+	OrderAgentStatusDone = "done"
 )

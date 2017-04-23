@@ -72,6 +72,65 @@ func AddOrderItem(orderItem *models.OrderItem) *models.OrderItem {
 	return orderItem
 }
 
+func AddOrderAgent(id string, agentId string) {
+	if id == "" {
+		panic(apperror.NewInvalidParameterError("orderId"))
+	}
+	order := GetOrderById(id)
+	agents := order.Agents
+
+	if agents == nil {
+		agents = []*models.OrderAgent{}
+	}
+
+	find := false
+	for _, ag := range agents {
+		if ag.UpAgentId == agentId {
+			find = true
+			break
+		}
+	}
+
+	if !find {
+		a := &models.OrderAgent{
+			UpAgentId: agentId,
+			MetaFields: models.NewMetaFields(),
+		}
+		agents = append(agents, a)
+		order.Agents = agents
+
+		session := mongo.Get()
+		defer session.Close()
+		session.MustUpdateId(collectionOrder, order.Id, order)
+	}
+}
+
+func RemoveOrderAgent(id string, agentId string) {
+	if id == "" {
+		panic(apperror.NewInvalidParameterError("orderId"))
+	}
+	order := GetOrderById(id)
+	agents := order.Agents
+	if agents != nil {
+		index := -1
+		for idx, a := range agents {
+			if a.UpAgentId == agentId {
+				index = idx
+				break
+			}
+		}
+
+		if index >= 0 {
+			agents = append(agents[:index], agents[index + 1:]...)
+			order.Agents = agents
+
+			session := mongo.Get()
+			defer session.Close()
+			session.MustUpdateId(collectionOrder, order.Id, order)
+		}
+	}
+}
+
 func GetOrderItemById(id string) *models.OrderItem {
 	session := mongo.Get()
 	defer session.Close()
@@ -133,6 +192,26 @@ func GetOrders(userId string, offset int, limit int) []*models.Order {
 	return orders
 }
 
+/**
+	agentId 上级代理商ID
+ */
+func GetAgentOrders(userId string, upAgentId string, offset int, limit int) []*models.Order {
+	session := mongo.Get()
+	defer session.Close()
+	orders := []*models.Order{}
+
+	option := mongo.Option{
+		Sort: []string{"-createdTime"},
+		Limit: &limit,
+		Offset: &offset,
+	}
+	query := bson.M{}
+	query["userId"] = userId
+	query["upAgents"] = bson.M{"$elemMatch": bson.M{"upAgentId" : upAgentId}}
+
+	session.MustFindWithOptions(collectionOrder, query, option, &orders)
+	return orders
+}
 
 func GetOrdersByTimeRange(userId string, start time.Time, end time.Time) []*models.Order {
 	session := mongo.Get()
