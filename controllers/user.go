@@ -108,6 +108,7 @@ func (u *UserController) MockLogin() {
 	u.SetUserId(id)
 	response := &loginResponse{
 		SessionId: u.CruSession.SessionID(),
+		UserId: id,
 	}
 	u.Data["json"] = response
 	u.ServeJSON()
@@ -224,6 +225,32 @@ func (u *UserController) UserAgent() {
 	u.ServeJSON()
 }
 
+type updateUserAgentRequest struct {
+	Id      string           `json:"id"`
+	Name    string           `json:"name"`
+	Tel     string           `json:"tel"`
+	Address string           `json:"address"`
+	Note    string           `json:"note"`
+	Avatar  string           `json:"avatar"`
+}
+
+// @router /user-agent-update [post]
+func (u *UserController) UpdateUserAgent() {
+	var request updateUserAgentRequest
+	u.Bind(&request)
+
+	agent := service.UpdateUserAgent(request.Id, &models.UserAgent{
+		Name: request.Name,
+		Tel: request.Tel,
+		Note: request.Note,
+		Address: request.Address,
+		Avatar: request.Avatar,
+	})
+
+	u.Data["json"] = agent
+	u.ServeJSON()
+}
+
 func GetAgentId(agentId string, key string) string {
 	if agentId != "" {
 		return agentId
@@ -285,8 +312,8 @@ func initUserDefaultData(userId string) {
 
 	orderA.Status = models.OrderStatusDone
 	orderC.Status = models.OrderStatusDone
-	service.UpdateOrder(orderA)
-	service.UpdateOrder(orderC)
+	service.UpdateOrder(userId, orderA)
+	service.UpdateOrder(userId, orderC)
 }
 
 func initAddOrder(userId string, customer *models.Customer, goods []*models.Goods, quantity int) *models.Order {

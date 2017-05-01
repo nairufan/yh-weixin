@@ -8,6 +8,7 @@ import (
 type MetaFields struct {
 	Id          string     `bson:"_id"  json:"id"`
 	CreatedTime *time.Time `bson:"createdTime,omitempty" json:"createdTime"`
+	UpdateTime  *time.Time `bson:"updateTime,omitempty" json:"updateTime"`
 }
 
 func NewId() string {
@@ -19,6 +20,7 @@ func NewMetaFields() MetaFields {
 	return MetaFields{
 		Id: NewId(),
 		CreatedTime: &now,
+		UpdateTime: &now,
 	}
 }
 

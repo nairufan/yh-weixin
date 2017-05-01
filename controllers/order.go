@@ -86,7 +86,7 @@ func (o *OrderController) UpdateOrder() {
 	if filed == "TotalPrice" {
 		value, _ = strconv.Atoi(request.Value)
 	}
-	order := updateOrderField(request.Id, filed, value)
+	order := updateOrderField(o.GetUserId(), request.Id, filed, value)
 	if filed == "Tel" {
 		c := service.GetCustomerByTel(o.GetUserId(), request.Value)
 		if c == nil {
@@ -100,7 +100,7 @@ func (o *OrderController) UpdateOrder() {
 		}
 	}
 	if filed == "Express" {
-		order = updateOrderField(request.Id, "Status", models.OrderStatusDone)
+		order = updateOrderField(o.GetUserId(), request.Id, "Status", models.OrderStatusDone)
 	}
 	o.Data["json"] = order
 	o.ServeJSON()
@@ -156,13 +156,13 @@ func (o *OrderController) UpdateOrderAgents() {
 
 	if request.AddedOrderIds != nil {
 		for _, id := range request.AddedOrderIds {
-			service.AddOrderAgent(id, request.AgentId)
+			service.AddOrderAgent(o.GetUserId(), id, request.AgentId)
 		}
 	}
 
 	if request.RemovedOrderIds != nil {
 		for _, id := range request.RemovedOrderIds {
-			service.RemoveOrderAgent(id, request.AgentId)
+			service.RemoveOrderAgent(o.GetUserId(), id, request.AgentId)
 		}
 	}
 
@@ -198,7 +198,7 @@ func (o *OrderController) UpdateOrderItem() {
 	o.ServeJSON()
 }
 
-func updateOrderField(id string, filedName string, fieldValue interface{}) *models.Order {
+func updateOrderField(userId string, id string, filedName string, fieldValue interface{}) *models.Order {
 	order := service.GetOrderById(id)
 	ps := reflect.ValueOf(order)
 	val := ps.Elem()
@@ -206,7 +206,7 @@ func updateOrderField(id string, filedName string, fieldValue interface{}) *mode
 	if field.IsValid() && field.CanSet() {
 		field.Set(reflect.ValueOf(fieldValue))
 	}
-	newOrder := service.UpdateOrder(order)
+	newOrder := service.UpdateOrder(userId, order)
 	return newOrder
 }
 
@@ -220,11 +220,16 @@ type OrderListResponse struct {
 func (o *OrderController) GetOrders() {
 	offset := o.GetString("offset")
 	limit := o.GetString("limit")
+	o.Data["json"] = orderList(o.GetUserId(), offset, limit)
+	o.ServeJSON()
+}
+
+func orderList(userId string, offset string, limit string) *OrderListResponse {
 	offsetInt, _ := strconv.Atoi(offset)
 	limitInt, _ := strconv.Atoi(limit)
 	response := &OrderListResponse{}
 
-	orders := service.GetOrders(o.GetUserId(), offsetInt, limitInt)
+	orders := service.GetOrders(userId, offsetInt, limitInt)
 	response.OrderList = orders
 	orderIds := []string{}
 
@@ -236,6 +241,51 @@ func (o *OrderController) GetOrders() {
 	goodsList := service.GetGoodsByIds(goodsIds)
 	response.OrderItemMap = orderItemMap
 	response.GoodsMap = ConvertGoodsMap(goodsList)
+
+	return response
+}
+
+type selectOrder struct {
+	*models.Order
+	IsSelected bool     `json:"isSelected"`
+}
+
+type selectOrderListResponse struct {
+	OrderList    []*selectOrder                           `json:"orderList"`
+	OrderItemMap map[string][]*models.OrderItem           `json:"orderItemMap"`
+	GoodsMap     map[string]*models.Goods                 `json:"goodsMap"`
+}
+
+// @router /list-select [get]
+func (o *OrderController) GetSelectOrders() {
+	offset := o.GetString("offset")
+	limit := o.GetString("limit")
+	upAgentId := o.GetString("userId")
+
+	listRes := orderList(o.GetUserId(), offset, limit)
+	response := &selectOrderListResponse{
+		OrderItemMap: listRes.OrderItemMap,
+		GoodsMap: listRes.GoodsMap,
+	}
+
+	selectOrderList := []*selectOrder{}
+	if listRes.OrderList != nil {
+		for _, order := range listRes.OrderList {
+			agents := order.Agents
+			sOrder := &selectOrder{
+				Order: order,
+			}
+			if agents != nil {
+				for _, agent := range agents {
+					if agent.UpAgentId == upAgentId {
+						sOrder.IsSelected = true
+					}
+				}
+			}
+			selectOrderList = append(selectOrderList, sOrder)
+		}
+	}
+	response.OrderList = selectOrderList
 	o.Data["json"] = response
 	o.ServeJSON()
 }
@@ -250,6 +300,44 @@ func (o *OrderController) GetAgentOrderList() {
 	agentId = GetAgentId(agentId, key)
 
 	o.Data["json"] = GetAgentOrders(offset, limit, userId, agentId, key)
+	o.ServeJSON()
+}
+
+type confirmOrderRequest struct {
+	OrderId    string     `json:"orderId" validate:"required"`
+	UpdateTime *time.Time `json:"updateTime"`
+}
+
+// @router /order-confirm [post]
+func (o *OrderController) UpAgentConfirmOrder() {
+
+	var request confirmOrderRequest
+	o.Bind(&request)
+	userId := o.GetUserId()
+	order := service.GetOrderById(request.OrderId)
+	reqUpdateTime := ""
+	if request.UpdateTime != nil {
+		reqUpdateTime = request.UpdateTime.Format("2006-01-02 15:04:05")
+	}
+
+	if (order.UpdateTime != nil && order.UpdateTime.Format("2006-01-02 15:04:05") == reqUpdateTime) || order.UpdateTime == nil {
+		if order.Agents != nil {
+			hasRole := false
+			for _, agent := range order.Agents {
+				if agent.UpAgentId == userId {
+					hasRole = true
+					break
+				}
+			}
+			if hasRole {
+				order.OwnerId = userId
+				order = service.UpdateOrder(userId, order)
+			}
+		}
+
+	}
+
+	o.Data["json"] = order
 	o.ServeJSON()
 }
 

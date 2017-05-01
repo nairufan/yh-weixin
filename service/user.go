@@ -131,7 +131,7 @@ func AddUserAgent(id string, agentId string) *models.UserAgent {
 	return agent
 }
 
-func UpdateUserAgent(agentId string, agent *models.UserAgent) {
+func UpdateUserAgent(agentId string, agent *models.UserAgent) *models.UserAgent {
 	if agentId == "" {
 		panic(apperror.NewInvalidParameterError("agentId"))
 	}
@@ -145,6 +145,8 @@ func UpdateUserAgent(agentId string, agent *models.UserAgent) {
 	session := mongo.Get()
 	defer session.Close()
 	session.MustUpdateId(collectionUserAgent, agentModel.Id, agentModel)
+
+	return agentModel
 }
 
 func GetUserAgentByUserIdAndAgentId(userId string, agentId string) *models.UserAgent {
@@ -225,7 +227,6 @@ func CheckUserAgentBind(userId string, agentId string) *models.UserAgentBind {
 
 	return nil
 }
-
 
 func GetUserAgentBindByKey(key string) *models.UserAgentBind {
 	binds := []*models.UserAgentBind{}

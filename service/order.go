@@ -33,11 +33,14 @@ func AddOrder(order *models.Order) *models.Order {
 	return order
 }
 
-func UpdateOrder(order *models.Order) *models.Order {
+func UpdateOrder(userId string, order *models.Order) *models.Order {
 	if order.Id == "" {
 		panic(apperror.NewInvalidParameterError("id"))
 	}
 	checkOrderStatus(order.Status)
+	checkOrderRole(userId, order)
+	now := time.Now()
+	order.UpdateTime = &now
 
 	session := mongo.Get()
 	defer session.Close()
@@ -72,7 +75,7 @@ func AddOrderItem(orderItem *models.OrderItem) *models.OrderItem {
 	return orderItem
 }
 
-func AddOrderAgent(id string, agentId string) {
+func AddOrderAgent(userId string, id string, agentId string) {
 	if id == "" {
 		panic(apperror.NewInvalidParameterError("orderId"))
 	}
@@ -99,13 +102,11 @@ func AddOrderAgent(id string, agentId string) {
 		agents = append(agents, a)
 		order.Agents = agents
 
-		session := mongo.Get()
-		defer session.Close()
-		session.MustUpdateId(collectionOrder, order.Id, order)
+		UpdateOrder(userId, order)
 	}
 }
 
-func RemoveOrderAgent(id string, agentId string) {
+func RemoveOrderAgent(userId string, id string, agentId string) {
 	if id == "" {
 		panic(apperror.NewInvalidParameterError("orderId"))
 	}
@@ -124,9 +125,7 @@ func RemoveOrderAgent(id string, agentId string) {
 			agents = append(agents[:index], agents[index + 1:]...)
 			order.Agents = agents
 
-			session := mongo.Get()
-			defer session.Close()
-			session.MustUpdateId(collectionOrder, order.Id, order)
+			UpdateOrder(userId, order)
 		}
 	}
 }
@@ -264,6 +263,13 @@ func GetOrderByTel(userId string, tel string, offset int, limit int) []*models.O
 func checkOrderStatus(status string) {
 	if (status != "" && status != "pending" && status != "done" && status != "close") {
 		panic(apperror.NewInvalidParameterError("status: pending, done, close"))
+	}
+}
+
+func checkOrderRole(userId string, order *models.Order) {
+	beego.Info(userId, order.UserId, order.OwnerId)
+	if order.UserId != userId && order.OwnerId != userId {
+		panic(apperror.NewAuthorizationError())
 	}
 }
 
