@@ -315,7 +315,7 @@ type confirmOrderResponse struct {
 
 const (
 	NotAuthorized = "not_authorized"
-	OrderNotConsistant = "order_not_consistant"
+	OrderNotConsistent = "order_not_consistent"
 )
 // @router /order-confirm [post]
 func (o *OrderController) UpAgentConfirmOrder() {
@@ -343,7 +343,7 @@ func (o *OrderController) UpAgentConfirmOrder() {
 		order = service.UpdateOrder(userId, order)
 
 	} else {
-		response.ErrorCode = OrderNotConsistant
+		response.ErrorCode = OrderNotConsistent
 	}
 	response.Order = order
 	o.Data["json"] = response
