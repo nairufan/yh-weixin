@@ -308,36 +308,45 @@ type confirmOrderRequest struct {
 	UpdateTime *time.Time `json:"updateTime"`
 }
 
+type confirmOrderResponse struct {
+	Order     *models.Order     `json:"order"`
+	ErrorCode string            `json:"errorCode"`
+}
+
+const (
+	NotAuthorized = "not_authorized"
+	OrderNotConsistant = "order_not_consistant"
+)
 // @router /order-confirm [post]
 func (o *OrderController) UpAgentConfirmOrder() {
 
+	response := &confirmOrderResponse{}
 	var request confirmOrderRequest
 	o.Bind(&request)
 	userId := o.GetUserId()
 	order := service.GetOrderById(request.OrderId)
+	if order.OwnerId != userId {
+		response.Order = order
+		response.ErrorCode = NotAuthorized
+		o.Data["json"] = response
+		o.ServeJSON()
+		return
+
+	}
 	reqUpdateTime := ""
 	if request.UpdateTime != nil {
 		reqUpdateTime = request.UpdateTime.Format("2006-01-02 15:04:05")
 	}
 
 	if (order.UpdateTime != nil && order.UpdateTime.Format("2006-01-02 15:04:05") == reqUpdateTime) || order.UpdateTime == nil {
-		if order.Agents != nil {
-			hasRole := false
-			for _, agent := range order.Agents {
-				if agent.UpAgentId == userId {
-					hasRole = true
-					break
-				}
-			}
-			if hasRole {
-				order.OwnerId = userId
-				order = service.UpdateOrder(userId, order)
-			}
-		}
+		order.OwnerId = userId
+		order = service.UpdateOrder(userId, order)
 
+	} else {
+		response.ErrorCode = OrderNotConsistant
 	}
-
-	o.Data["json"] = order
+	response.Order = order
+	o.Data["json"] = response
 	o.ServeJSON()
 }
 
