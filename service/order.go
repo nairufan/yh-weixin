@@ -23,9 +23,6 @@ func AddOrder(order *models.Order) *models.Order {
 	if order.Name == "" {
 		panic(apperror.NewInvalidParameterError("name"))
 	}
-	if order.Address == "" {
-		panic(apperror.NewInvalidParameterError("address"))
-	}
 	session := mongo.Get()
 	defer session.Close()
 	session.MustInsert(collectionOrder, order)
