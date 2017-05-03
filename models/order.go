@@ -11,7 +11,7 @@ type Order struct {
 	Note       string         `bson:"note"  json:"note"`
 	TotalPrice int            `bson:"totalPrice"  json:"totalPrice"`
 	OwnerId    string         `bson:"ownerId"  json:"ownerId"`
-	Agents     []*OrderAgent  `bson:"upAgents"  json:"upAgents"`
+	Agents     []*OrderAgent  `bson:"upAgents"  json:"-"`
 }
 
 type OrderAgent struct {

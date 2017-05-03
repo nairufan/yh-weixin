@@ -188,6 +188,23 @@ func GetOrders(userId string, offset int, limit int) []*models.Order {
 	return orders
 }
 
+func GetAgentsOrders(userId string, offset int, limit int) []*models.Order {
+	session := mongo.Get()
+	defer session.Close()
+	orders := []*models.Order{}
+
+	option := mongo.Option{
+		Sort: []string{"-createdTime"},
+		Limit: &limit,
+		Offset: &offset,
+	}
+	query := bson.M{}
+	query["upAgents"] = bson.M{"$elemMatch": bson.M{"upAgentId" : userId}}
+
+	session.MustFindWithOptions(collectionOrder, query, option, &orders)
+	return orders
+}
+
 /**
 	agentId 上级代理商ID
  */

@@ -211,7 +211,7 @@ func updateOrderField(userId string, id string, filedName string, fieldValue int
 }
 
 type OrderListResponse struct {
-	OrderList    []*models.Order                          `json:"orderList"`
+	OrderList    []*AgentOrder                            `json:"orderList"`
 	OrderItemMap map[string][]*models.OrderItem           `json:"orderItemMap"`
 	GoodsMap     map[string]*models.Goods                 `json:"goodsMap"`
 }
@@ -224,13 +224,23 @@ func (o *OrderController) GetOrders() {
 	o.ServeJSON()
 }
 
+type AgentOrder struct {
+	*models.Order
+	IsConfirm    bool     `json:"isConfirm"`
+	IsAgentOrder bool     `json:"isAgentOrder"`
+}
+
 func orderList(userId string, offset string, limit string) *OrderListResponse {
 	offsetInt, _ := strconv.Atoi(offset)
 	limitInt, _ := strconv.Atoi(limit)
 	response := &OrderListResponse{}
 
 	orders := service.GetOrders(userId, offsetInt, limitInt)
-	response.OrderList = orders
+	agentsOrders := service.GetAgentsOrders(userId, offsetInt, limitInt)
+	if agentsOrders != nil {
+		orders = append(orders, agentsOrders...)
+	}
+	response.OrderList = ConvertAgentOrders(userId, orders)
 	orderIds := []string{}
 
 	for _, order := range orders {
@@ -246,7 +256,7 @@ func orderList(userId string, offset string, limit string) *OrderListResponse {
 }
 
 type selectOrder struct {
-	*models.Order
+	*AgentOrder
 	IsSelected bool     `json:"isSelected"`
 }
 
@@ -273,7 +283,7 @@ func (o *OrderController) GetSelectOrders() {
 		for _, order := range listRes.OrderList {
 			agents := order.Agents
 			sOrder := &selectOrder{
-				Order: order,
+				AgentOrder: order,
 			}
 			if agents != nil {
 				for _, agent := range agents {
@@ -297,7 +307,6 @@ func (o *OrderController) GetAgentOrderList() {
 	userId := o.GetString("userId")
 	agentId := o.GetString("agentId")
 	key := o.GetString("key")
-	agentId = GetAgentId(agentId, key)
 
 	o.Data["json"] = GetAgentOrders(offset, limit, userId, agentId, key)
 	o.ServeJSON()
@@ -333,14 +342,17 @@ func (o *OrderController) UpAgentConfirmOrder() {
 	if (order.UpdateTime != nil && order.UpdateTime.Format("2006-01-02 15:04:05") == reqUpdateTime) || order.UpdateTime == nil {
 		if order.Agents != nil {
 			hasRole := false
-			for _, agent := range order.Agents {
+			agents := order.Agents
+			for _, agent := range agents {
 				if agent.UpAgentId == userId {
 					hasRole = true
+					agent.Status = models.OrderAgentStatusDone
 					break
 				}
 			}
 			if hasRole {
 				order.OwnerId = userId
+				order.Agents = agents
 				order = service.UpdateOrder(userId, order)
 			} else {
 				response.ErrorCode = NotAuthorized
@@ -356,31 +368,62 @@ func (o *OrderController) UpAgentConfirmOrder() {
 	o.ServeJSON()
 }
 
-func GetAgentOrders(offset string, limit string, userId string, agentId string, key string) *OrderListResponse {
+type AgentOrderListResponse struct {
+	OrderList    []*AgentOrder                     `json:"orderList"`
+	OrderItemMap map[string][]*models.OrderItem           `json:"orderItemMap"`
+	GoodsMap     map[string]*models.Goods                 `json:"goodsMap"`
+}
+
+func GetAgentOrders(offset string, limit string, userId string, agentId string, key string) *AgentOrderListResponse {
 	offsetInt, _ := strconv.Atoi(offset)
 	limitInt, _ := strconv.Atoi(limit)
 	agentId = GetAgentId(agentId, key)
 
-	response := &OrderListResponse{}
+	response := &AgentOrderListResponse{}
 
 	if agentId == "" {
 		return response
 	}
 
 	orders := service.GetAgentOrders(agentId, userId, offsetInt, limitInt)
-	response.OrderList = orders
 	orderIds := []string{}
-
 	for _, order := range orders {
 		orderIds = append(orderIds, order.Id)
 	}
 	orderItems := service.GetOrderItems(orderIds)
 	orderItemMap, goodsIds := ConvertOrderItemMap(orderItems)
 	goodsList := service.GetGoodsByIds(goodsIds)
+	response.OrderList = ConvertAgentOrders(userId, orders)
 	response.OrderItemMap = orderItemMap
 	response.GoodsMap = ConvertGoodsMap(goodsList)
 
 	return response
+}
+
+func ConvertAgentOrders(userId string, orders []*models.Order) []*AgentOrder {
+	agentOrders := []*AgentOrder{}
+	for _, order := range orders {
+		ao := &AgentOrder{
+			Order: order,
+		}
+		if order.Agents != nil {
+			for _, agent := range order.Agents {
+				if userId == agent.UpAgentId {
+					if agent.Status == models.OrderAgentStatusDone {
+						ao.CreatedTime = agent.CreatedTime
+						ao.IsConfirm = true
+					}
+					ao.IsAgentOrder = true
+					break
+				}
+			}
+		}
+
+		agentOrders = append(agentOrders, ao)
+
+	}
+
+	return agentOrders
 }
 
 // @router /statistics [get]

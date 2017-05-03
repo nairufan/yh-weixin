@@ -198,7 +198,7 @@ func (u *UserController) Agents() {
 type userAgentData struct {
 	User  *models.User                `json:"user"`
 	Agent *models.UserAgent           `json:"agent"`
-	Order *OrderListResponse          `json:"order"`
+	Order *AgentOrderListResponse     `json:"order"`
 }
 
 // @router /user-agent [get]
