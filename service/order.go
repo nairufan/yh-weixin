@@ -188,7 +188,7 @@ func GetOrders(userId string, offset int, limit int, isActive bool) []*models.Or
 		and = append(and, bson.M{"status": models.OrderStatusPending})
 		and = append(and, bson.M{"$or": []bson.M{
 			{"ownerId": bson.M{"$exists": false}},
-			{"ownerId": bson.M{"$eq": ""}},
+			{"ownerId": ""},
 		}})
 	}
 	session.MustFindWithOptions(collectionOrder, query, option, &orders)
