@@ -185,11 +185,15 @@ func GetOrders(userId string, offset int, limit int, isActive bool) []*models.Or
 	query["status"] = bson.M{"$ne": models.OrderStatusClose}
 	if isActive {
 		and := []bson.M{}
+		and = append(and, bson.M{"userId": userId})
 		and = append(and, bson.M{"status": models.OrderStatusPending})
 		and = append(and, bson.M{"$or": []bson.M{
 			{"ownerId": bson.M{"$exists": false}},
 			{"ownerId": ""},
 		}})
+		query["$and"] = and
+		session.MustFindWithOptions(collectionOrder, query, option, &orders)
+		return orders
 	}
 	session.MustFindWithOptions(collectionOrder, query, option, &orders)
 	return orders
