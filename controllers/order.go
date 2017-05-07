@@ -237,13 +237,17 @@ func orderList(userId string, offset string, limit string, isActive bool) *Order
 
 	orders := service.GetOrders(userId, offsetInt, limitInt, isActive)
 	agentsOrders := service.GetAgentsOrders(userId, offsetInt, limitInt, isActive)
+	allOrders := []*models.Order{}
 	if agentsOrders != nil {
-		orders = append(orders, agentsOrders...)
+		allOrders = append(allOrders, agentsOrders...)
 	}
-	response.OrderList = ConvertAgentOrders(userId, orders)
+	if orders != nil {
+		allOrders = append(allOrders, orders...)
+	}
+	response.OrderList = ConvertAgentOrders(userId, allOrders)
 	orderIds := []string{}
 
-	for _, order := range orders {
+	for _, order := range allOrders {
 		orderIds = append(orderIds, order.Id)
 	}
 	orderItems := service.GetOrderItems(orderIds)
