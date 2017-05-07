@@ -208,7 +208,7 @@ func GetAgentsOrders(userId string, offset int, limit int, isActive bool) []*mod
 	query := bson.M{}
 	query["upAgents"] = bson.M{"$elemMatch": bson.M{"upAgentId" : userId}}
 	if isActive {
-		query["ownerId"] = bson.M{"$eq": userId}
+		query["ownerId"] = userId
 	}
 	session.MustFindWithOptions(collectionOrder, query, option, &orders)
 	return orders
