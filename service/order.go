@@ -210,7 +210,8 @@ func GetAgentsOrders(userId string, offset int, limit int, isActive bool) []*mod
 		Offset: &offset,
 	}
 	query := bson.M{}
-	query["upAgents"] = bson.M{"$elemMatch": bson.M{"upAgentId" : userId}}
+	query["upAgents"] = bson.M{"$elemMatch": bson.M{"upAgentId" : userId, "status": models.OrderAgentStatusDone}}
+
 	if isActive {
 		query["ownerId"] = userId
 	}

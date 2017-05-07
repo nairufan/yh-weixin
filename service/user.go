@@ -198,7 +198,8 @@ func AddUserAgentBind(userId string, agentId string, key string) *models.UserAge
 	session := mongo.Get()
 	defer session.Close()
 
-	bind := CheckUserAgentBind(userId, agentId)
+	bind := GetUserAgentBindByKey(key)
+
 	if bind == nil {
 		bind = &models.UserAgentBind{
 			UserId: userId,
@@ -207,9 +208,11 @@ func AddUserAgentBind(userId string, agentId string, key string) *models.UserAge
 		}
 		bind.MetaFields = models.NewMetaFields()
 		session.MustInsert(collectionUserAgentBind, bind)
-	} else {
+	} else if bind.UserId == userId && bind.AgentId == agentId {
 		bind.Key = key
 		session.MustUpdateId(collectionUserAgentBind, bind.Id, bind)
+	} else {
+		panic(apperror.NewInvalidOperationError("Invalid key"))
 	}
 	return bind
 
