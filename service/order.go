@@ -170,7 +170,7 @@ func UpdateOrderItem(orderItem *models.OrderItem) *models.OrderItem {
 	return item
 }
 
-func GetOrders(userId string, offset int, limit int) []*models.Order {
+func GetOrders(userId string, offset int, limit int, isActive bool) []*models.Order {
 	session := mongo.Get()
 	defer session.Close()
 	orders := []*models.Order{}
@@ -183,12 +183,19 @@ func GetOrders(userId string, offset int, limit int) []*models.Order {
 	query := bson.M{}
 	query["userId"] = userId
 	query["status"] = bson.M{"$ne": models.OrderStatusClose}
-
+	if isActive {
+		and := []bson.M{}
+		and = append(and, bson.M{"status": models.OrderStatusPending})
+		and = append(and, bson.M{"$or": []bson.M{
+			{"ownerId": bson.M{"$exists": false}},
+			{"ownerId": bson.M{"$eq": ""}},
+		}})
+	}
 	session.MustFindWithOptions(collectionOrder, query, option, &orders)
 	return orders
 }
 
-func GetAgentsOrders(userId string, offset int, limit int) []*models.Order {
+func GetAgentsOrders(userId string, offset int, limit int, isActive bool) []*models.Order {
 	session := mongo.Get()
 	defer session.Close()
 	orders := []*models.Order{}
@@ -200,7 +207,9 @@ func GetAgentsOrders(userId string, offset int, limit int) []*models.Order {
 	}
 	query := bson.M{}
 	query["upAgents"] = bson.M{"$elemMatch": bson.M{"upAgentId" : userId}}
-
+	if isActive {
+		query["ownerId"] = bson.M{"$eq": userId}
+	}
 	session.MustFindWithOptions(collectionOrder, query, option, &orders)
 	return orders
 }

@@ -220,7 +220,7 @@ type OrderListResponse struct {
 func (o *OrderController) GetOrders() {
 	offset := o.GetString("offset")
 	limit := o.GetString("limit")
-	o.Data["json"] = orderList(o.GetUserId(), offset, limit)
+	o.Data["json"] = orderList(o.GetUserId(), offset, limit, false)
 	o.ServeJSON()
 }
 
@@ -230,13 +230,13 @@ type AgentOrder struct {
 	IsAgentOrder bool     `json:"isAgentOrder"`
 }
 
-func orderList(userId string, offset string, limit string) *OrderListResponse {
+func orderList(userId string, offset string, limit string, isActive bool) *OrderListResponse {
 	offsetInt, _ := strconv.Atoi(offset)
 	limitInt, _ := strconv.Atoi(limit)
 	response := &OrderListResponse{}
 
-	orders := service.GetOrders(userId, offsetInt, limitInt)
-	agentsOrders := service.GetAgentsOrders(userId, offsetInt, limitInt)
+	orders := service.GetOrders(userId, offsetInt, limitInt, isActive)
+	agentsOrders := service.GetAgentsOrders(userId, offsetInt, limitInt, isActive)
 	if agentsOrders != nil {
 		orders = append(orders, agentsOrders...)
 	}
@@ -272,7 +272,7 @@ func (o *OrderController) GetSelectOrders() {
 	limit := o.GetString("limit")
 	upAgentId := o.GetString("userId")
 
-	listRes := orderList(o.GetUserId(), offset, limit)
+	listRes := orderList(o.GetUserId(), offset, limit, true)
 	response := &selectOrderListResponse{
 		OrderItemMap: listRes.OrderItemMap,
 		GoodsMap: listRes.GoodsMap,
